@@ -1,0 +1,31 @@
+.m {
+    height: 4.8em;
+    left: 3.89em;
+    width: 0.22em;
+    position: relative;
+    background: #222;
+    border-width: 0 0 3.2px 0;
+    /*animation: a36016 3600s normal infinite linear;*/
+    outline: 1px solid transparent;
+}
+
+.mr {
+    width: 0.5em;
+    height: 0.5em;
+    background: #222;
+    margin: -1.05em 0 0 3.74em;
+    border-radius: 0.25em;
+}
+
+.mm {
+    /*transform: rotate(60deg);*/
+}
+
+@keyframes a36016 {
+    0% {
+        transform: translate(0, 1.6em) rotate(0deg) translate(0, -1.6em);
+    }
+    100% {
+        transform: translate(0, 1.6em) rotate(360deg) translate(0, -1.6em);
+    }
+}

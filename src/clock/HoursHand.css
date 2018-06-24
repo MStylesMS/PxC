@@ -1,0 +1,19 @@
+.h {
+    width: 0.3em;
+    height: 3.4em;
+    left: 3.85em;
+    position: relative;
+    background: #222;
+    margin-top: 1.3em;
+    outline: 1px solid transparent;
+    /*animation: a36010 43200s normal infinite linear;*/
+}
+
+.hh {
+    /*transform: rotate(-55deg);*/
+    /*-webkit-transform: rotate(-55deg);*/
+}
+
+.h, .hh {
+    transform: rotate(180deg);
+}

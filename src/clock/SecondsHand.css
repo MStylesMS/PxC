@@ -1,0 +1,45 @@
+.s {
+    width: 0.1em;
+    height: 4.8em;
+    top: 0.6em;
+    left: 3.95em;
+    position: relative;
+    background: #a00;
+    outline: 1px solid transparent;
+    /*animation: a360_10 60s backwards infinite steps(60, end);*/
+    /*-webkit-animation: a360_10 60s backwards infinite steps(60, end);*/
+}
+
+.sr {
+    width: 0.3em;
+    height: 0.3em;
+    background: #a00;
+    margin: -0.95em 0 0 3.84em;
+    border-radius: 0.15em;
+}
+
+.ss {
+    /*animation: tick 1s backwards infinite steps(25, end);*/
+    /*-webkit-animation: tick 1s backwards infinite steps(25, end);*/
+}
+
+@keyframes a360_10 {
+    0% {
+        transform: translate(0, 1.0em) rotate(0deg) translate(0, -1.0em)
+    }
+    100% {
+        transform: translate(0, 1.0em) rotate(360deg) translate(0, -1.0em)
+    }
+}
+
+@keyframes tick {
+    0% {
+        transform: rotate(0deg);
+    }
+    12% {
+        transform: rotate(6deg);
+    }
+    100% {
+        transform: rotate(6deg);
+    }
+}
