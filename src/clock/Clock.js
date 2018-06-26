@@ -27,7 +27,7 @@ export default class Clock extends Component {
     }
 
     componentDidMount() {
-        this.tickInterval = setInterval(() => this.tick(), 10);
+        this.tickInterval = setInterval(() => this.tick(), 1000);
     }
 
     render() {
