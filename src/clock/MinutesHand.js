@@ -1,27 +1,9 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import './MinutesHand.css';
 
-export default class MinutesHand extends Component {
-    rotate = null;
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            rotate: null
-        }
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        const rotate = Math.round(Math.round((this.props.time / 60) % 60) * 360 / 60);
-        if (rotate == this.rotate) {
-            return false;
-        }
-        this.rotate = rotate;
-        return true;
-    }
-
+export default class MinutesHand extends PureComponent {
     render() {
-        let rotate = this.rotate === null ? 0 : this.rotate;
+        const rotate = Math.round(Math.round((this.props.time / 60) % 60) * 360 / 60);
         return (
             <div className="mm">
                 <div className="m"

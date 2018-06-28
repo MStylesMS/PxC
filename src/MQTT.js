@@ -1,36 +1,53 @@
+import {BehaviorSubject, Observable, Subject} from 'rxjs';
+import {filter, switchMap} from 'rxjs/operators';
+
 // Create a client instance
-const Paho = require('paho-mqtt');
-console.debug(process.env.REACT_APP_MQTT_HOST);
-const client = new Paho.Client(process.env.REACT_APP_MQTT_HOST, Number(process.env.REACT_APP_MQTT_PORT), "clientId");
+import {Client} from "paho-mqtt";
+
+const {EventEmitter} = require('fbemitter');
+
+const clientId = `180624_houdini[${Math.round(Math.random() * 100000).toString(16)}]`;
+const client = new Client(process.env.REACT_APP_MQTT_HOST, Number(process.env.REACT_APP_MQTT_PORT), clientId);
+client.startTrace();
+
+const connect$ = new BehaviorSubject(false);
 
 // set callback handlers
-client.onConnectionLost = onConnectionLost;
-client.onMessageArrived = onMessageArrived;
+client.onConnectionLost = responseObject => {
+    console.log(client.getTraceLog());
+    connect$.next(false);
+    if (responseObject.errorCode !== 0) {
+        console.error("onConnectionLost:" + responseObject.errorMessage);
+    }
+};
+client.onMessageArrived = message => subscribeEmitter.emit(message.destinationName, message.payloadString);
 
 // connect the client
-client.connect({onSuccess: onConnect});
+client.connect({onSuccess: () => connect$.next(true)});
 
+const subscribeEmitter = new EventEmitter();
 
-// called when the client connects
-function onConnect() {
-    // Once a connection has been made, make a subscription and send a message.
-    console.log("onConnect");
-    client.subscribe("World");
-    const message = new Paho.Message("Hello");
-    message.destinationName = "World";
-    client.send(message);
-}
-
-// called when the client loses its connection
-function onConnectionLost(responseObject) {
-    if (responseObject.errorCode !== 0) {
-        console.log("onConnectionLost:" + responseObject.errorMessage);
+export default {
+    subscribe: function (topic) {
+        return connect$
+            .pipe(
+                filter(connected => connected),
+                switchMap(() => {
+                    client.subscribe(topic);
+                    const topicSubscribe$ = new Subject();
+                    subscribeEmitter.addListener(topic, response => {
+                        topicSubscribe$.next(response);
+                    });
+                    return topicSubscribe$;
+                })
+            );
+    },
+    publish: function (topic, payload, retained) {
+        return connect$
+            .filter(connected => connected)
+            .map(() => {
+                client.publish(topic, payload, 2, retained);
+                return Observable.of(true);
+            });
     }
-}
-
-// called when a message arrives
-function onMessageArrived(message) {
-    console.log("onMessageArrived:" + message.payloadString);
-}
-
-export default client;
+};

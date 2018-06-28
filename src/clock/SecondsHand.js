@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import Transition from 'react-transition-group/Transition';
 import './SecondsHand.css';
 
 export default class SecondsHand extends Component {
