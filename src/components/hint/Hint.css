@@ -4,6 +4,8 @@
     left: 50%;
     transition: opacity 2000ms;
     opacity: 0;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    width: 100vh;
 }
 
 #hint.shown {
@@ -11,9 +13,7 @@
 }
 
 #hint div {
-    transform: translate(-50%, -50%) rotate(-90deg);
     text-align: center;
-    width: 100vh;
     color: white;
     text-shadow: 4px 4px black;
     font-size: 64px;
