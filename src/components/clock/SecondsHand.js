@@ -1,7 +1,7 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import './SecondsHand.css';
 
-export default class SecondsHand extends Component {
+export default class SecondsHand extends PureComponent {
     render() {
         const rotate = (this.props.time % 60) * 360 / 60;
         return (

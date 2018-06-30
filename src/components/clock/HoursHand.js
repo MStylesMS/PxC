@@ -1,7 +1,7 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import './HoursHand.css';
 
-export default class HoursHand extends Component {
+export default class HoursHand extends PureComponent {
     render() {
         const rotate = Math.round(((this.props.time / 3600) % 12) * 360 / 12);
         return (

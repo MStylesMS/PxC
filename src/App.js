@@ -1,15 +1,17 @@
 import React, {PureComponent} from 'react';
-import Clock from './clock/Clock';
+import Clock from './components/clock/Clock';
+import Hint from './components/hint/Hint';
 import './App.css';
 import MQTT from './MQTT';
 import {filter, map} from 'rxjs/operators';
 
 class App extends PureComponent {
     constructor(props) {
-        super(props)
+        super(props);
         this.state = {
             active: false,
-            time: 0
+            time: 0,
+            updatedTimestamp: new Date().getTime()
         }
     }
 
@@ -33,14 +35,22 @@ class App extends PureComponent {
                         if (isNaN(time)) time = this.state.time;
                     } catch (e) {
                     }
-                    this.setState({time: time});
-                } else if (commandObject.command) {
+                    this.setState({time: time, updatedTimestamp: new Date().getTime()});
+                }
+                else if (commandObject.hint) {
+                    this.setState({
+                        hint: commandObject.hint,
+                        duration: commandObject.duration,
+                        updatedTimestamp: new Date().getTime()
+                    });
+                }
+                else if (commandObject.command) {
                     switch (commandObject.command) {
                         case 'start':
-                            this.setState({active: true});
+                            this.setState({active: true, updatedTimestamp: new Date().getTime()});
                             break;
                         case 'pause':
-                            this.setState({active: false});
+                            this.setState({active: false, updatedTimestamp: new Date().getTime()});
                             break;
                         default:
                             console.warn(`Unexpected command object: ${JSON.stringify(commandObject)}`);
@@ -53,6 +63,7 @@ class App extends PureComponent {
         return (
             <div className="App">
                 <Clock active={this.state.active} time={this.state.time}></Clock>
+                <Hint text={this.state.hint} duration={this.state.duration}></Hint>
             </div>
         );
     }

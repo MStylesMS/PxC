@@ -1,0 +1,22 @@
+#hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transition: opacity 2000ms;
+    opacity: 0;
+}
+
+#hint.shown {
+    opacity: 1;
+}
+
+#hint div {
+    transform: translate(-50%, -50%) rotate(-90deg);
+    text-align: center;
+    width: 100vh;
+    color: white;
+    text-shadow: 4px 4px black;
+    font-size: 64px;
+    line-height: 1;
+    font-family: serif;
+}

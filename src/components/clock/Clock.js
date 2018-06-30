@@ -1,10 +1,10 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import './Clock.css';
 import HoursHand from './HoursHand';
 import SecondsHand from "./SecondsHand";
 import MinutesHand from "./MinutesHand";
 
-export default class Clock extends Component {
+export default class Clock extends PureComponent {
     tickInterval;
 
     constructor(props) {
