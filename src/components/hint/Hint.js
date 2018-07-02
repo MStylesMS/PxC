@@ -1,6 +1,5 @@
 import React, {PureComponent} from 'react';
 import './Hint.css';
-import {CSSTransitionGroup} from 'react-transition-group';
 
 const FADEIN_ANIMATION_DURATION = 200;
 

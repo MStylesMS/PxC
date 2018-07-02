@@ -7,8 +7,7 @@ export default class MinutesHand extends PureComponent {
         return (
             <div className="mm">
                 <div className="m"
-                     style={{transform: `translate(0, 1.6em) rotate(${rotate}deg) translate(0, -1.6em)`}}></div>
-                <div className="mr"></div>
+                     style={{transform: `translate(0px, calc(85vh / 2.5 / 2)) rotate(${rotate}deg) translate(0px, calc(-85vh / 2.5 / 2))`}}></div>
             </div>
         );
     }

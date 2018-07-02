@@ -1,38 +1,54 @@
 .s {
-    width: 0.1em;
-    height: 4.8em;
-    top: 0.6em;
-    left: 3.95em;
-    position: relative;
-    background: #a00;
-    outline: 1px solid transparent;
-    /*animation: a360_10 60s backwards infinite steps(60, end);*/
-    /*-webkit-animation: a360_10 60s backwards infinite steps(60, end);*/
+    width: calc(85vh / 3 / 10);
+    height: calc(85vh / 3);
+    top: calc(85vh / 2 - 85vh / 3 + 5px);
+    left: calc(85vh / 2 - (85vh / 3 / 10) / 2 + 5px);
+    position: absolute;
+    background-image: url("seconds_hand_sm.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
 }
 
 .sr {
     width: 0.3em;
     height: 0.3em;
     background: #a00;
-    margin: -0.95em 0 0 3.84em;
-    border-radius: 0.15em;
+    /*margin: -0.95em 0 0 3.84em;*/
+    border-radius: 100%;
 }
 
 .ss {
-    /*animation: tick 1s backwards infinite steps(25, end);*/
-    /*-webkit-animation: tick 1s backwards infinite steps(25, end);*/
+    animation-duration: 1000ms;
+    animation-timing-function: steps(25, end);
+    animation-delay: initial;
+    animation-iteration-count: 1;
+    animation-direction: initial;
+    animation-fill-mode: backwards;
+    animation-play-state: initial;
 }
 
-@keyframes a360_10 {
+.ss.tick-animation-0 {
+    animation-name: tick1;
+}
+
+.ss.tick-animation-1 {
+    animation-name: tick2;
+}
+
+@keyframes tick1 {
     0% {
-        transform: translate(0, 1.0em) rotate(0deg) translate(0, -1.0em)
+        transform: rotate(0deg);
+    }
+    12% {
+        transform: rotate(6deg);
     }
     100% {
-        transform: translate(0, 1.0em) rotate(360deg) translate(0, -1.0em)
+        transform: rotate(6deg);
     }
 }
 
-@keyframes tick {
+@keyframes tick2 {
     0% {
         transform: rotate(0deg);
     }

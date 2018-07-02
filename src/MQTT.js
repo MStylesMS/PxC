@@ -2,7 +2,7 @@ import {BehaviorSubject, Observable, Subject} from 'rxjs';
 import {filter, switchMap} from 'rxjs/operators';
 
 // Create a client instance
-import {Client, Message} from "paho-mqtt";
+import {Client} from "paho-mqtt";
 
 const {EventEmitter} = require('fbemitter');
 

@@ -58,53 +58,19 @@ export default class Clock extends PureComponent {
         this.setState({active: false});
     }
 
-    // componentDidMount() {
-    //     if (this.state.active)
-    //         this.startTicking();
-    // }
-    //
-    // componentDidUpdate() {
-    //     if (this.state.active)
-    //         this.startTicking();
-    //     else {
-    //         this.stopTicking();
-    //     }
-    // }
-
     render() {
         return (
             <div id="clock">
                 <div id="a">
                     <div id="b">
-                        <div id="c">
-                            <div id="d">
-                                <div id="shadow">
-                                    {this.state.withHour && <HoursHand time={this.state.time}/>}
-                                    {this.state.withMin && <MinutesHand time={this.state.time}/>}
-                                    <SecondsHand time={this.state.time}/>
-                                </div>
-                                <div id="ii">
-                                    <b><i></i><i></i><i></i><i></i></b>
-                                    <b><i></i><i></i><i></i><i></i></b>
-                                    <b><i></i><i></i><i></i><i></i></b>
-                                    <b><i></i><i></i><i></i><i></i></b>
-                                    <b><i></i><i></i><i></i><i></i></b>
-                                    <b><i></i><i></i><i></i><i></i></b>
-                                </div>
-                                <div id="e">
-                                    <div id="f">
-                                        <u>12<u>1<u>2<u>3</u>4</u>5</u></u>
-                                    </div>
-                                    <div id="g">
-                                        <u><u>11<u>10<u>9</u>8</u>7</u>6</u>
-                                    </div>
-                                </div>
-                                {this.state.withHour && <HoursHand time={this.state.time}/>}
-                                {this.state.withMin && <MinutesHand time={this.state.time}/>}
-                                <SecondsHand time={this.state.time}/>
-                                <div id="k"></div>
-                            </div>
+                        <div id="shadow">
+                            {this.state.withHour && <HoursHand time={this.state.time}/>}
+                            {this.state.withMin && <MinutesHand time={this.state.time}/>}
+                            <SecondsHand time={this.state.time}/>
                         </div>
+                        {this.state.withHour && <HoursHand time={this.state.time}/>}
+                        {this.state.withMin && <MinutesHand time={this.state.time}/>}
+                        <SecondsHand time={this.state.time}/>
                     </div>
                 </div>
             </div>
