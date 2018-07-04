@@ -1,6 +1,5 @@
 import React, {PureComponent} from 'react';
 import './Clock.css';
-import HoursHand from './HoursHand';
 import SecondsHand from "./SecondsHand";
 import MinutesHand from "./MinutesHand";
 
@@ -13,16 +12,14 @@ export default class Clock extends PureComponent {
             firstRender: false,
             active: props.active || false,
             time: props.time || 0,
-            withHour: props.time >= 60 * 60,
             withMin: props.time >= 60
         };
     }
 
     componentWillReceiveProps(nextProps) {
-        if (typeof(nextProps.time) !== 'undefined' && nextProps.time !== this.props.time) {
+        if (typeof(nextProps.time) !== 'undefined' && Math.abs(nextProps.time !== this.props.time)<=1) {
             this.setState({
                 time: nextProps.time || 0,
-                withHour: nextProps.time >= 60 * 60,
                 withMin: nextProps.time >= 60
             });
         }
@@ -64,11 +61,9 @@ export default class Clock extends PureComponent {
                 <div id="a">
                     <div id="b">
                         <div id="shadow">
-                            {this.state.withHour && <HoursHand time={this.state.time}/>}
                             {this.state.withMin && <MinutesHand time={this.state.time}/>}
                             <SecondsHand time={this.state.time}/>
                         </div>
-                        {this.state.withHour && <HoursHand time={this.state.time}/>}
                         {this.state.withMin && <MinutesHand time={this.state.time}/>}
                         <SecondsHand time={this.state.time}/>
                     </div>

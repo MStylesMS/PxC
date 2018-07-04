@@ -1,17 +1,19 @@
-import React, {PureComponent} from 'react';
+import React, {Component} from 'react';
 import Clock from './components/clock/Clock';
 import Hint from './components/hint/Hint';
 import './App.css';
 import MQTT from './MQTT';
 import {filter, map} from 'rxjs/operators';
 
-class App extends PureComponent {
+class App extends Component {
     constructor(props) {
         super(props);
         this.state = {
             active: false,
             time: 0,
-            updatedTimestamp: new Date().getTime()
+            updatedTimestamp: new Date().getTime(),
+            shown: false,
+            fadeDuration: 2000
         }
     }
 
@@ -35,22 +37,27 @@ class App extends PureComponent {
                         if (isNaN(time)) time = this.state.time;
                     } catch (e) {
                     }
-                    this.setState({time: time, updatedTimestamp: new Date().getTime()});
+                    this.setState({time: time});
                 }
                 else if (commandObject.hint) {
                     this.setState({
                         hint: commandObject.hint,
                         duration: commandObject.duration,
-                        updatedTimestamp: new Date().getTime()
                     });
                 }
                 else if (commandObject.command) {
                     switch (commandObject.command) {
                         case 'start':
-                            this.setState({active: true, updatedTimestamp: new Date().getTime()});
+                            this.setState({active: true});
                             break;
                         case 'pause':
-                            this.setState({active: false, updatedTimestamp: new Date().getTime()});
+                            this.setState({active: false, fadeDuration: commandObject.duration || 2000});
+                            break;
+                        case 'fadeout':
+                            this.setState({shown: false, fadeDuration: commandObject.duration || 2000});
+                            break;
+                        case 'fadein':
+                            this.setState({shown: true, fadeDuration: commandObject.duration || 2000});
                             break;
                         default:
                             console.warn(`Unexpected command object: ${JSON.stringify(commandObject)}`);
@@ -60,8 +67,11 @@ class App extends PureComponent {
     }
 
     render() {
+        const appClasses = `App ${this.state.shown ? 'shown' : 'hidden'}`;
+        const appStyle = {animationDuration: `${this.state.fadeDuration}ms`};
         return (
-            <div className="App">
+            <div className={appClasses}
+                 style={appStyle}>
                 <Clock active={this.state.active} time={this.state.time}></Clock>
                 <Hint text={this.state.hint} duration={this.state.duration}></Hint>
             </div>

@@ -3,7 +3,7 @@ import './MinutesHand.css';
 
 export default class MinutesHand extends PureComponent {
     render() {
-        const rotate = Math.round(Math.round((this.props.time / 60) % 60) * 360 / 60);
+        const rotate = Math.round(Math.floor((this.props.time / 60) % 60) * 360 / 60);
         return (
             <div className="mm">
                 <div className="m"
