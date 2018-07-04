@@ -11,7 +11,6 @@ class App extends Component {
         this.state = {
             active: false,
             time: 0,
-            updatedTimestamp: new Date().getTime(),
             shown: false,
             fadeDuration: 2000
         }

@@ -17,7 +17,12 @@ export default class Clock extends PureComponent {
     }
 
     componentWillReceiveProps(nextProps) {
-        if (typeof(nextProps.time) !== 'undefined' && Math.abs(nextProps.time !== this.props.time)<=1) {
+        console.debug('componentWillReceiveProps', nextProps);
+        if (
+            typeof(nextProps.time) !== 'undefined' &&
+            Math.abs(nextProps.time - this.state.time) > 1 &&
+            nextProps.time !== this.props.time
+        ) {
             this.setState({
                 time: nextProps.time || 0,
                 withMin: nextProps.time >= 60

@@ -1,0 +1,11 @@
+topic
+
+Paradox/Houdini/Mirror/Clock/Commands
+
+commands
+
+{"command": "fadein", "duration": 1000}
+{"command": "fadeout", "duration": 500}
+{"time": "12:34"}
+{"command": "start"}
+{"command": "pause"}
