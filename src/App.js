@@ -10,7 +10,10 @@ class App extends Component {
         super(props);
         this.state = {
             active: false,
-            time: 0,
+            time: {
+                value: 0,
+                updated: new Date().getTime()
+            },
             shown: false,
             fadeDuration: 2000
         }
@@ -36,7 +39,12 @@ class App extends Component {
                         if (isNaN(time)) time = this.state.time;
                     } catch (e) {
                     }
-                    this.setState({time: time});
+                    this.setState({
+                        time: {
+                            value: time,
+                            updated: new Date().getTime()
+                        }
+                    });
                 }
                 else if (commandObject.hint) {
                     this.setState({
@@ -66,6 +74,7 @@ class App extends Component {
     }
 
     render() {
+        console.debug('App render');
         const appClasses = `App ${this.state.shown ? 'shown' : 'hidden'}`;
         const appStyle = {animationDuration: `${this.state.fadeDuration}ms`};
         return (

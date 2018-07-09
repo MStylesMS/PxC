@@ -1,33 +1,21 @@
-import React, {PureComponent} from 'react';
+import React, {Component} from 'react';
 import './Clock.css';
 import SecondsHand from "./SecondsHand";
 import MinutesHand from "./MinutesHand";
 
-export default class Clock extends PureComponent {
+export default class Clock extends Component {
     tickInterval;
 
     constructor(props) {
         super(props);
         this.state = {
-            firstRender: false,
             active: props.active || false,
-            time: props.time || 0,
-            withMin: props.time >= 60
+            time: props.time || {value: 0, updated: new Date().getTime()},
+            withMin: props.time.value >= 60
         };
     }
 
     componentWillReceiveProps(nextProps) {
-        console.debug('componentWillReceiveProps', nextProps);
-        if (
-            typeof(nextProps.time) !== 'undefined' &&
-            Math.abs(nextProps.time - this.state.time) > 1 &&
-            nextProps.time !== this.props.time
-        ) {
-            this.setState({
-                time: nextProps.time || 0,
-                withMin: nextProps.time >= 60
-            });
-        }
         if (typeof(nextProps.active) !== 'undefined') {
             if (nextProps.active) {
                 this.startTicking();
@@ -36,19 +24,44 @@ export default class Clock extends PureComponent {
                 this.stopTicking();
             }
         }
+        if (
+            this.willTimeChange(nextProps)
+        ) {
+            this.setState({
+                time: nextProps.time,
+                withMin: nextProps.time.value >= 60
+            });
+        }
+    }
+
+    willTimeChange(nextProps) {
+        if (
+            typeof(nextProps.time) === 'undefined' ||
+            nextProps.time.updated <= this.state.time.updated
+        ) {
+            return false;
+        }
+        let timeChange = (nextProps.time.value - this.state.time.value) !== 0;
+        if (this.state.active) {
+            timeChange = Math.abs(nextProps.time.value - this.state.time.value) > 1;
+        }
+        return timeChange;
     }
 
     _tick() {
-        if (this.state.time - 1 < 0) {
+        const nextTime = this.state.time.value - 1;
+        if (nextTime < 0) {
             this.stopTicking();
         }
         else
-            this.setState({time: this.state.time - 1});
+            this.setState({time: {...this.state.time, value: nextTime}});
     }
 
     startTicking() {
         if (this.tickInterval)
             return false;
+        else if (this.state.time.value <= 0)
+            return this.stopTicking();
         this._tick();
         this.tickInterval = setInterval(() => this._tick(), 1000);
         this.setState({active: true});
@@ -61,16 +74,13 @@ export default class Clock extends PureComponent {
     }
 
     render() {
+        console.debug('Clock render');
         return (
             <div id="clock">
                 <div id="a">
                     <div id="b">
-                        <div id="shadow">
-                            {this.state.withMin && <MinutesHand time={this.state.time}/>}
-                            <SecondsHand time={this.state.time}/>
-                        </div>
-                        {this.state.withMin && <MinutesHand time={this.state.time}/>}
-                        <SecondsHand time={this.state.time}/>
+                        {this.state.withMin && <MinutesHand time={this.state.time.value}/>}
+                        <SecondsHand time={this.state.time.value} animated={this.state.active}/>
                     </div>
                 </div>
             </div>
