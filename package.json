@@ -13,8 +13,8 @@
     "rxjs": "^6.2.1"
   },
   "scripts": {
-    "start": "cross-env REACT_APP_MQTT_HOST=beetoo.ru REACT_APP_MQTT_PORT=9001 react-scripts start",
-    "build": "cross-env REACT_APP_MQTT_HOST=beetoo.ru REACT_APP_MQTT_PORT=9001 react-scripts build",
+    "start": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
+    "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   }
