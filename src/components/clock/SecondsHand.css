@@ -35,21 +35,3 @@
 .ss.tick-animation-1 {
     animation-name: tick2;
 }
-
-@keyframes tick1 {
-    0% {
-        transform: rotate(6deg);
-    }
-    100% {
-        transform: rotate(0deg);
-    }
-}
-
-@keyframes tick2 {
-    0% {
-        transform: rotate(6deg);
-    }
-    100% {
-        transform: rotate(0deg);
-    }
-}
