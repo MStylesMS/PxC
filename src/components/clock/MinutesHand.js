@@ -3,11 +3,11 @@ import './MinutesHand.css';
 
 export default class MinutesHand extends PureComponent {
     render() {
-        const rotate = Math.round(Math.floor((this.props.time / 60) % 60) * 360 / 60);
+        const rotate = (Math.PI * (3/2)) + Math.atan2(Math.cos((-Math.PI* this.props.time)/1800), ((3/5)*Math.sin((-Math.PI * this.props.time)/1800)));
         return (
             <div className="mm">
                 <div className="m"
-                     style={{transform: `translate(0px, calc(85vh / 2.5 / 2)) rotate(${rotate}deg) translate(0px, calc(-85vh / 2.5 / 2))`}}></div>
+                     style={{transform: `translate(0px, calc(85vh / 2.5 / 2)) rotate(${rotate}rad) translate(0px, calc(-85vh / 2.5 / 2))`}}></div>
             </div>
         );
     }
