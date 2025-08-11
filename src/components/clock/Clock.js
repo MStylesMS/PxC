@@ -15,9 +15,9 @@ export default class Clock extends Component {
         };
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (typeof(nextProps.active) !== 'undefined') {
-            if (nextProps.active) {
+    componentDidUpdate(prevProps) {
+        if (typeof(this.props.active) !== 'undefined' && prevProps.active !== this.props.active) {
+            if (this.props.active) {
                 this.startTicking();
             }
             else {
@@ -25,25 +25,25 @@ export default class Clock extends Component {
             }
         }
         if (
-            this.willTimeChange(nextProps)
+            this.willTimeChange(this.props, prevProps)
         ) {
             this.setState({
-                time: nextProps.time,
-                withMin: nextProps.time.value >= 60
+                time: this.props.time,
+                withMin: this.props.time.value >= 60
             });
         }
     }
 
-    willTimeChange(nextProps) {
+    willTimeChange(currentProps, prevProps) {
         if (
-            typeof(nextProps.time) === 'undefined' ||
-            nextProps.time.updated <= this.state.time.updated
+            typeof(currentProps.time) === 'undefined' ||
+            currentProps.time.updated <= this.state.time.updated
         ) {
             return false;
         }
-        let timeChange = (nextProps.time.value - this.state.time.value) !== 0;
+        let timeChange = (currentProps.time.value - this.state.time.value) !== 0;
         if (this.state.active) {
-            timeChange = Math.abs(nextProps.time.value - this.state.time.value) > 1;
+            timeChange = Math.abs(currentProps.time.value - this.state.time.value) > 1;
         }
         return timeChange;
     }

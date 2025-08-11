@@ -15,23 +15,27 @@ export default class Clock extends PureComponent {
         }
     }
 
-    componentWillReceiveProps(nextProps) {
-        console.debug('Clock.componentWillReceiveProps', nextProps);
-        this.stopTimer();
-        const text = nextProps.text && nextProps.text.trim();
-        if (text) {
-            this.setState({
-                text: text,
-                duration: nextProps.duration || 25,
-                shown: true
-            }, () => this.startTimer());
+    componentDidUpdate(prevProps) {
+        console.debug('Hint.componentDidUpdate', this.props);
+        
+        // Only process if text prop actually changed
+        if (prevProps.text !== this.props.text) {
+            this.stopTimer();
+            const text = this.props.text && this.props.text.trim();
+            if (text) {
+                this.setState({
+                    text: text,
+                    duration: this.props.duration || 25,
+                    shown: true
+                }, () => this.startTimer());
+            }
+            else
+                this.setState({
+                    text: null,
+                    duration: this.props.duration || 25,
+                    shown: false
+                });
         }
-        else
-            this.setState({
-                text: null,
-                duration: nextProps.duration || 25,
-                shown: false
-            });
     }
 
     stopTimer() {
