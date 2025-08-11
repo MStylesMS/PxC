@@ -151,28 +151,38 @@ npm run format         # Format code with Prettier
 npm run format:check   # Check code formatting
 ```
 
-### Testing
 
-The project includes comprehensive test coverage using React Testing Library:
+### MQTT & App Settings (.ini-based)
 
-```bash
-# Run all tests
-npm test
+All configuration is now managed via `.ini` files in the `config/` directory. The default is `config/development.ini`.
 
-# Run tests with coverage
-npm run test:coverage
+**Example: `config/development.ini`**
 
-# Run tests in CI mode
-CI=true npm test
+```ini
+[mqtt]
+host = localhost
+port = 1884
+topic = Paradox/Houdini/Mirror/Clock/Commands
+reconnect_interval = 5000
+keep_alive = 60
+
+[display]
+fade_duration_default = 2000
+hint_duration_default = 25
+clock_orientation = -90
+
+
 ```
 
-### Code Quality
+**To change MQTT host, port, or topic:**
+1. Edit `config/development.ini` under the `[mqtt]` section.
+2. Restart the app if running.
 
-- **ESLint**: Enforces code style and catches potential issues
-- **Prettier**: Maintains consistent code formatting
-- **React Hooks**: Modern functional components with hooks
-- **Testing Library**: Component testing with user-centric approach
+**To add production or other environments:**
+1. Copy `config/development.ini` to `config/production.ini` (or any name matching your `NODE_ENV`).
+2. Edit as needed for your environment.
 
+The app will auto-load the `.ini` file matching `NODE_ENV` (default: `development`).
 ## 🏗️ Architecture
 
 ### Component Structure

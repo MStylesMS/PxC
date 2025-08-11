@@ -20,10 +20,11 @@
   "bugs": {
     "url": "https://github.com/paradox/houdini-clock/issues"
   },
-  "homepage": "https://github.com/paradox/houdini-clock#readme",
+  "homepage": ".",
   "dependencies": {
     "cross-env": "^7.0.3",
     "fbemitter": "^3.0.0",
+    "ini": "^5.0.0",
     "paho-mqtt": "^1.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -38,7 +39,7 @@
     "prettier": "^3.3.3"
   },
   "scripts": {
-    "start": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
+    "start": "cross-env PUBLIC_URL=/ REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
     "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
     "build:analyze": "npm run build && npx serve -s build",
     "build:stats": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",

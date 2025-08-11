@@ -1,19 +1,17 @@
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import App from './App';
-
-// Mock MQTT module
+// Mock MQTT module BEFORE importing App
 jest.mock('./MQTT', () => ({
   __esModule: true,
   default: {
     subscribe: jest.fn(() => ({
-      pipe: jest.fn(() => ({
-        subscribe: jest.fn(),
-      })),
+      pipe: jest.fn(() => ({ subscribe: jest.fn() })),
     })),
   },
 }));
+
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import App from './App';
 
 describe('App Component', () => {
   test('renders without crashing', () => {

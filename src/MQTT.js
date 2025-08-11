@@ -1,12 +1,12 @@
+
 import { BehaviorSubject, Subject, timer } from 'rxjs';
 import { filter, map, switchMap, retry, takeUntil, catchError } from 'rxjs/operators';
-
-// Create a client instance
 import { Client } from 'paho-mqtt';
 import { EventEmitter } from 'fbemitter';
+import config from './config';
 
 // Configuration constants
-const RECONNECT_DELAY = 5000; // 5 seconds
+const RECONNECT_DELAY = Number((config.mqtt && config.mqtt.reconnect_interval) || 5000);
 const MAX_RECONNECT_ATTEMPTS = 5;
 const CONNECTION_TIMEOUT = 30000; // 30 seconds
 
@@ -21,32 +21,27 @@ const subscribeEmitter = new EventEmitter();
 // Initialize MQTT client with error handling
 const initializeMQTTClient = () => {
   try {
-    const host = process.env.REACT_APP_MQTT_HOST || 'localhost';
-    const port = Number(process.env.REACT_APP_MQTT_PORT) || 1884;
-    
+    const host = (config.mqtt && config.mqtt.host) || 'localhost';
+    const port = Number((config.mqtt && config.mqtt.port) || 1884);
     client = new Client(host, port, clientId);
-    
+
     // Enable tracing only in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || config.enable_console_logging) {
       client.startTrace();
     }
 
     // Optimized connection lost handler
     client.onConnectionLost = (responseObject) => {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === 'development' || config.enable_console_logging) {
         console.log('MQTT Trace Log:', client.getTraceLog());
       }
-      
       connect$.next(false);
-      
       if (responseObject.errorCode !== 0) {
         console.error('MQTT Connection Lost:', responseObject.errorMessage);
-        
         // Implement exponential backoff reconnection
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
           reconnectAttempts++;
-          
           console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts})`);
           setTimeout(() => connectClient(), delay);
         } else {
@@ -105,20 +100,23 @@ const connectClient = () => {
   }
 };
 
+
 // Initialize and connect
 initializeMQTTClient();
 connectClient();
 
+
 // Optimized MQTT service
 export default {
   subscribe: function (topic) {
+    // Use topic from config if not provided
+    const subTopic = topic || (config.mqtt && config.mqtt.topic) || 'Paradox/Houdini/Mirror/Clock/Commands';
     return connect$.pipe(
       filter(connected => connected),
       switchMap(() => {
         try {
-          client.subscribe(topic);
+          client.subscribe(subTopic);
           const topicSubscribe$ = new Subject();
-          
           const listener = (response) => {
             try {
               topicSubscribe$.next(response);
@@ -126,19 +124,17 @@ export default {
               console.error('Error in MQTT subscription listener:', error);
             }
           };
-          
-          subscribeEmitter.addListener(topic, listener);
-          
+          subscribeEmitter.addListener(subTopic, listener);
           // Return observable that handles cleanup
           return topicSubscribe$.pipe(
             takeUntil(connect$.pipe(filter(connected => !connected))),
             catchError(error => {
               console.error('MQTT subscription error:', error);
-              return timer(1000).pipe(switchMap(() => this.subscribe(topic)));
+              return timer(1000).pipe(switchMap(() => this.subscribe(subTopic)));
             })
           );
         } catch (error) {
-          console.error('Failed to subscribe to MQTT topic:', topic, error);
+          console.error('Failed to subscribe to MQTT topic:', subTopic, error);
           throw error;
         }
       }),
@@ -147,6 +143,8 @@ export default {
   },
 
   publish: function (topic, payload, retained = false) {
+    // Use topic from config if not provided
+    const pubTopic = topic || (config.mqtt && config.mqtt.topic) || 'Paradox/Houdini/Mirror/Clock/Commands';
     return connect$.pipe(
       filter(connected => connected),
       map(() => {
@@ -154,13 +152,10 @@ export default {
           if (!client) {
             throw new Error('MQTT client not initialized');
           }
-          
-          client.publish(topic, payload, 2, retained);
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('MQTT Published:', { topic, payload, retained });
+          client.publish(pubTopic, payload, 2, retained);
+          if (process.env.NODE_ENV === 'development' || config.enable_console_logging) {
+            console.log('MQTT Published:', { pubTopic, payload, retained });
           }
-          
           return true;
         } catch (error) {
           console.error('Failed to publish MQTT message:', error);

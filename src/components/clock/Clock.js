@@ -80,6 +80,14 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
     }
   }, [active, state.active, startTicking, stopTicking]);
 
+  // Ensure ticking starts on initial mount if active is true
+  useEffect(() => {
+    if (active) {
+      startTicking();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (willTimeChange(propTime, state.active)) {
       setState(prevState => ({

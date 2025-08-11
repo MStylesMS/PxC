@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Hint from './Hint';
 
@@ -43,7 +43,9 @@ describe('Hint Component', () => {
     render(<Hint text="Test hint" />);
     
     // Should auto-hide after default duration (25 seconds)
-    jest.advanceTimersByTime(25000 + 200); // 25s + fade animation
+    act(() => {
+      jest.advanceTimersByTime(25000 + 200); // 25s + fade animation
+    });
     
     const hint = screen.getByTestId('hint');
     expect(hint).not.toHaveClass('shown');
@@ -53,11 +55,15 @@ describe('Hint Component', () => {
     render(<Hint text="Test hint" duration={5} />);
     
     // Should still be shown before custom duration
-    jest.advanceTimersByTime(3000);
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
     expect(screen.getByTestId('hint')).toHaveClass('shown');
     
     // Should be hidden after custom duration
-    jest.advanceTimersByTime(3000); // Total 6s (5s + fade)
+    act(() => {
+      jest.advanceTimersByTime(3000); // Total 6s (5s + fade)
+    });
     expect(screen.getByTestId('hint')).not.toHaveClass('shown');
   });
 
@@ -65,7 +71,9 @@ describe('Hint Component', () => {
     const { rerender } = render(<Hint text="First hint" duration={5} />);
     
     // Advance time partially
-    jest.advanceTimersByTime(3000);
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
     expect(screen.getByTestId('hint')).toHaveClass('shown');
     
     // Change text (should reset timer)
@@ -91,7 +99,9 @@ describe('Hint Component', () => {
     
     // Advancing time should not cause issues
     expect(() => {
-      jest.advanceTimersByTime(15000);
+      act(() => {
+        jest.advanceTimersByTime(15000);
+      });
     }).not.toThrow();
   });
 });

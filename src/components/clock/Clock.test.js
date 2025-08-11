@@ -79,9 +79,9 @@ describe('Clock Component', () => {
       jest.advanceTimersByTime(1000);
     });
 
-    // Check that the time would have decreased
+    // With immediate tick on start, after 1s it should be 118
     const secondsHand = screen.getByTestId('seconds-hand');
-    expect(secondsHand).toHaveAttribute('data-time', '119');
+    expect(secondsHand).toHaveAttribute('data-time', '118');
   });
 
   test('stops ticking when time reaches 0', () => {

@@ -20,7 +20,16 @@ class App extends Component {
   }
 
   componentDidMount() {
-    MQTT.subscribe('Paradox/Houdini/Mirror/Clock/Commands')
+    const stream = MQTT && typeof MQTT.subscribe === 'function'
+      ? MQTT.subscribe('Paradox/Houdini/Mirror/Clock/Commands')
+      : null;
+
+    if (!stream || typeof stream.pipe !== 'function') {
+      // In tests or if MQTT unavailable, no subscription
+      return;
+    }
+
+    stream
       .pipe(
         filter(response => response),
         map(payload => {
