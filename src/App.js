@@ -4,7 +4,6 @@ import Hint from './components/hint/Hint';
 import './App.css';
 import MQTT from './MQTT';
 import { filter, map } from 'rxjs/operators';
-import performanceAnalyzer from './utils/performanceAnalyzer';
 
 class App extends Component {
   constructor(props) {
@@ -21,18 +20,10 @@ class App extends Component {
   }
 
   componentDidMount() {
-    performanceAnalyzer.trackMount('App');
-    performanceAnalyzer.startMonitoring();
-    
-    const subscriptionStart = performance.now();
-    
     MQTT.subscribe('Paradox/Houdini/Mirror/Clock/Commands')
       .pipe(
         filter(response => response),
         map(payload => {
-          const messageReceived = performance.now();
-          performanceAnalyzer.trackMQTTMessage(subscriptionStart, messageReceived);
-          
           try {
             return JSON.parse(payload);
           } catch (e) {
@@ -85,13 +76,11 @@ class App extends Component {
   }
 
   render() {
-    const renderStart = performanceAnalyzer.startRender('App');
-    
     console.debug('App render');
     const appClasses = `App ${this.state.shown ? 'shown' : 'hidden'}`;
     const appStyle = { animationDuration: `${this.state.fadeDuration}ms` };
     
-    const result = (
+    return (
       <div className={appClasses} style={appStyle} role="main" data-testid="app">
         <Clock 
           active={this.state.active} 
@@ -105,9 +94,6 @@ class App extends Component {
         />
       </div>
     );
-    
-    performanceAnalyzer.endRender('App');
-    return result;
   }
 }
 

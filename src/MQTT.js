@@ -1,5 +1,5 @@
 import { BehaviorSubject, Subject, timer } from 'rxjs';
-import { filter, map, switchMap, retry, takeUntil, tap, catchError } from 'rxjs/operators';
+import { filter, map, switchMap, retry, takeUntil, catchError } from 'rxjs/operators';
 
 // Create a client instance
 import { Client } from 'paho-mqtt';

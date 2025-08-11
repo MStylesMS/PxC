@@ -2,6 +2,7 @@
  * Performance Analysis Utilities
  * Comprehensive performance monitoring for React components and app metrics
  */
+import React from 'react';
 
 class PerformanceAnalyzer {
   constructor() {
@@ -272,8 +273,6 @@ const performanceAnalyzer = new PerformanceAnalyzer();
 
 // React Hook for component performance tracking
 export const usePerformanceTracker = (componentName) => {
-  const React = require('react');
-  
   React.useEffect(() => {
     performanceAnalyzer.trackMount(componentName);
     

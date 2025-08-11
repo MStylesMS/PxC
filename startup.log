@@ -1,0 +1,93 @@
+
+> houdini-clock@1.0.1 start
+> cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start
+
+(node:275289) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:275289) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:275289) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Compiled successfully!
+
+You can now view houdini-clock in the browser.
+
+  Local:            http://localhost:3000/paradox/houdini-cloc
+  On Your Network:  http://10.0.0.224:3000/paradox/houdini-cloc
+
+Note that the development build is not optimized.
+To create a production build, use yarn build.
+
+webpack compiled successfully
+Compiling...
+Compiled successfully!
+webpack compiled successfully
+Compiling...
+Failed to compile.
+
+[eslint] 
+src/App.js
+Syntax error: Missing catch or finally clause. (23:4) (23:4)
+ERROR in ./src/App.js
+Module build failed (from ./node_modules/babel-loader/lib/index.js):
+SyntaxError: /opt/paradox/apps/houdiniclock/src/App.js: Missing catch or finally clause. (23:4)
+
+  21 |
+  22 |   componentDidMount() {
+> 23 |     try {
+     |     ^
+  24 |       MQTT.subscribe('Paradox/Houdini/Mirror/Clock/Commands')
+  25 |         .pipe(
+  26 |         filter(response => response),
+    at constructor (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:367:19)
+    at FlowParserMixin.raise (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:6627:19)
+    at FlowParserMixin.parseTryStatement (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13224:12)
+    at FlowParserMixin.parseStatementContent (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12804:21)
+    at FlowParserMixin.parseStatementLike (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:2946:24)
+    at FlowParserMixin.parseStatementListItem (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12747:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13316:61)
+    at FlowParserMixin.parseBlockBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13309:10)
+    at FlowParserMixin.parseBlock (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13297:10)
+    at FlowParserMixin.parseFunctionBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12101:24)
+    at FlowParserMixin.parseFunctionBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:2923:11)
+    at FlowParserMixin.parseFunctionBodyAndFinish (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12087:10)
+    at FlowParserMixin.parseFunctionBodyAndFinish (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:2931:18)
+    at FlowParserMixin.parseMethod (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12045:31)
+    at FlowParserMixin.pushClassMethod (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13727:30)
+    at FlowParserMixin.pushClassMethod (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:3299:11)
+    at FlowParserMixin.parseClassMemberWithIsStatic (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13615:12)
+    at FlowParserMixin.parseClassMember (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13563:10)
+    at FlowParserMixin.parseClassMember (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:3187:11)
+    at /opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13517:14
+    at FlowParserMixin.withSmartMixTopicForbiddingContext (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12404:14)
+    at FlowParserMixin.parseClassBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13499:10)
+    at FlowParserMixin.parseClass (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13474:22)
+    at FlowParserMixin.parseStatementContent (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12794:21)
+    at FlowParserMixin.parseStatementLike (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12767:17)
+    at FlowParserMixin.parseStatementLike (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:2946:24)
+    at FlowParserMixin.parseModuleItem (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12744:17)
+    at FlowParserMixin.parseBlockOrModuleBlockBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13316:36)
+    at FlowParserMixin.parseBlockBody (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:13309:10)
+    at FlowParserMixin.parseProgram (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12625:10)
+    at FlowParserMixin.parseTopLevel (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:12615:25)
+    at FlowParserMixin.parseTopLevel (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:3715:28)
+    at FlowParserMixin.parse (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:14492:10)
+    at parse (/opt/paradox/apps/houdiniclock/node_modules/@babel/parser/lib/index.js:14526:38)
+    at parser (/opt/paradox/apps/houdiniclock/node_modules/@babel/core/lib/parser/index.js:41:34)
+    at parser.next (<anonymous>)
+    at normalizeFile (/opt/paradox/apps/houdiniclock/node_modules/@babel/core/lib/transformation/normalize-file.js:64:37)
+    at normalizeFile.next (<anonymous>)
+    at run (/opt/paradox/apps/houdiniclock/node_modules/@babel/core/lib/transformation/index.js:22:50)
+    at run.next (<anonymous>)
+    at transform (/opt/paradox/apps/houdiniclock/node_modules/@babel/core/lib/transform.js:22:33)
+    at transform.next (<anonymous>)
+    at step (/opt/paradox/apps/houdiniclock/node_modules/gensync/index.js:261:32)
+    at /opt/paradox/apps/houdiniclock/node_modules/gensync/index.js:273:13
+    at async.call.result.err.err (/opt/paradox/apps/houdiniclock/node_modules/gensync/index.js:223:11)
+
+ERROR in [eslint] 
+src/App.js
+  Line 23:4:  Parsing error: Missing catch or finally clause. (23:4)
+
+webpack compiled with 2 errors

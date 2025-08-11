@@ -1,0 +1,113 @@
+
+> houdini-clock@1.0.1 start
+> cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start
+
+(node:278159) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:278159) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:278159) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+Starting the development server...
+
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+src/components/clock/Clock.js
+  Line 29:6:   React Hook useCallback has a missing dependency: 'state.time.value'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 62:6:   React Hook useCallback has a missing dependency: 'stopTicking'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+  Line 107:5:  Unexpected console statement                                                                                           no-console
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+src/components/clock/Clock.js
+  Line 29:6:   React Hook useCallback has a missing dependency: 'state.time.value'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 62:6:   React Hook useCallback has a missing dependency: 'stopTicking'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+  Line 107:5:  Unexpected console statement                                                                                           no-console
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+src/components/clock/Clock.js
+  Line 29:6:   React Hook useCallback has a missing dependency: 'state.time.value'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 62:6:   React Hook useCallback has a missing dependency: 'stopTicking'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+  Line 107:5:  Unexpected console statement                                                                                           no-console
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/App.js
+  Line 30:13:  Unexpected console statement  no-console
+  Line 69:17:  Unexpected console statement  no-console
+  Line 73:11:  Unexpected console statement  no-console
+  Line 79:5:   Unexpected console statement  no-console
+
+src/components/clock/Clock.js
+  Line 29:6:   React Hook useCallback has a missing dependency: 'state.time.value'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 62:6:   React Hook useCallback has a missing dependency: 'stopTicking'. Either include it or remove the dependency array       react-hooks/exhaustive-deps
+  Line 107:5:  Unexpected console statement                                                                                           no-console
+
+webpack compiled with 1 warning

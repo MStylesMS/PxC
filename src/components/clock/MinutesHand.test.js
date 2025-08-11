@@ -6,18 +6,18 @@ import MinutesHand from './MinutesHand';
 describe('MinutesHand Component', () => {
   test('renders without crashing', () => {
     render(<MinutesHand time={120} />);
-    expect(screen.getByRole('generic')).toBeInTheDocument();
+    expect(screen.getByTestId('minutes-hand')).toBeInTheDocument();
   });
 
   test('applies correct CSS classes', () => {
     render(<MinutesHand time={120} />);
-    const element = screen.getByRole('generic');
+    const element = screen.getByTestId('minutes-hand').parentElement;
     expect(element).toHaveClass('mm');
   });
 
   test('calculates rotation based on time', () => {
     render(<MinutesHand time={120} />);
-    const handElement = screen.getByRole('generic').querySelector('.m');
+    const handElement = screen.getByTestId('minutes-hand');
     
     expect(handElement.style.transform).toContain('rotate');
     expect(handElement.style.transform).toContain('translate');
@@ -36,12 +36,12 @@ describe('MinutesHand Component', () => {
     rerender(<MinutesHand time={1800} />); // 30 minutes
     rerender(<MinutesHand time={3600} />); // 60 minutes
     
-    expect(screen.getByRole('generic')).toBeInTheDocument();
+    expect(screen.getByTestId('minutes-hand')).toBeInTheDocument();
   });
 
   test('rotation changes with different time values', () => {
     const { rerender } = render(<MinutesHand time={1800} />);
-    const handElement = screen.getByRole('generic').querySelector('.m');
+    const handElement = screen.getByTestId('minutes-hand');
     const firstRotation = handElement.style.transform;
     
     rerender(<MinutesHand time={900} />);

@@ -1,0 +1,7 @@
+
+> houdini-clock@1.0.1 start
+> cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start
+
+(node:273839) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Something is already running on port 3000.

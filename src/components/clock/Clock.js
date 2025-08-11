@@ -3,11 +3,15 @@ import './Clock.css';
 import SecondsHand from './SecondsHand';
 import MinutesHand from './MinutesHand';
 
-const Clock = React.memo(({ active, time: propTime }) => {
+const Clock = React.memo(({ active = false, time: propTime }) => {
+  // Provide safe defaults for props
+  const defaultTime = { value: 0, updated: new Date().getTime() };
+  const safeTime = propTime || defaultTime;
+  
   const [state, setState] = useState({
-    active: active || false,
-    time: propTime || { value: 0, updated: new Date().getTime() },
-    withMin: (propTime?.value || 0) >= 60,
+    active: active,
+    time: safeTime,
+    withMin: (safeTime.value || 0) >= 60,
   });
 
   const tickIntervalRef = useRef(null);

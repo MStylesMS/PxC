@@ -6,26 +6,26 @@ import SecondsHand from './SecondsHand';
 describe('SecondsHand Component', () => {
   test('renders without crashing', () => {
     render(<SecondsHand time={30} />);
-    expect(screen.getByRole('generic')).toBeInTheDocument();
+    expect(screen.getByTestId('seconds-hand')).toBeInTheDocument();
   });
 
   test('applies animation class when animated', () => {
     render(<SecondsHand time={30} animated={true} />);
-    const element = screen.getByRole('generic');
+    const element = screen.getByTestId('seconds-hand').parentElement;
     expect(element).toHaveClass('ss');
     expect(element.className).toMatch(/tick-animation-/);
   });
 
   test('does not apply animation class when not animated', () => {
     render(<SecondsHand time={30} animated={false} />);
-    const element = screen.getByRole('generic');
+    const element = screen.getByTestId('seconds-hand').parentElement;
     expect(element).toHaveClass('ss');
     expect(element.className).not.toMatch(/tick-animation-/);
   });
 
   test('calculates rotation based on time', () => {
     render(<SecondsHand time={30} />);
-    const handElement = screen.getByRole('generic').querySelector('.s');
+    const handElement = screen.getByTestId('seconds-hand');
     
     expect(handElement).toHaveStyle({
       transition: 'all 1s'
