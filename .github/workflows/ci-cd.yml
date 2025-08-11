@@ -44,7 +44,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [16, 18, 20]
+        node-version: [18, 20]
         
     steps:
     - name: Checkout Code
@@ -65,8 +65,8 @@ jobs:
         CI: true
         
     - name: Upload Coverage to Codecov
-      if: matrix.node-version == 18
-      uses: codecov/codecov-action@v3
+      if: matrix.node-version == '18'
+      uses: codecov/codecov-action@v4
       with:
         files: ./coverage/lcov.info
         fail_ci_if_error: false
@@ -127,7 +127,7 @@ jobs:
       continue-on-error: true
       
     - name: Run Snyk Security Test
-      uses: snyk/actions/node@master
+      uses: snyk/actions/node@v3
       continue-on-error: true
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -138,6 +138,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
     
     steps:
     - name: Checkout Code
@@ -212,6 +215,12 @@ jobs:
     needs: [build, security, docker]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: staging
+    permissions:
+      contents: read
+      deployments: write
+    concurrency:
+      group: netlify-staging-${{ github.ref }}
+      cancel-in-progress: true
     
     steps:
     - name: Checkout Code
@@ -242,6 +251,12 @@ jobs:
     needs: [deploy-staging, lighthouse]
     if: github.event_name == 'release'
     environment: production
+    permissions:
+      contents: read
+      deployments: write
+    concurrency:
+      group: netlify-production-${{ github.sha }}
+      cancel-in-progress: false
     
     steps:
     - name: Checkout Code

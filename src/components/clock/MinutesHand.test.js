@@ -11,7 +11,8 @@ describe('MinutesHand Component', () => {
 
   test('applies correct CSS classes', () => {
     render(<MinutesHand time={120} />);
-    const element = screen.getByTestId('minutes-hand').parentElement;
+  // eslint-disable-next-line testing-library/no-node-access
+  const element = screen.getByTestId('minutes-hand').parentElement;
     expect(element).toHaveClass('mm');
   });
 

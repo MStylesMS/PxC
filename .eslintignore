@@ -1,0 +1,5 @@
+src/App.clean.js
+src/registerServiceWorker.optimized.js
+src/utils/performance.js
+src/utils/performanceAnalyzer.js
+src/__tests__/performance.test.js

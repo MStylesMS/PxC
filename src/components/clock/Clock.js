@@ -26,7 +26,7 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
       timeChange = Math.abs(currentTime.value - state.time.value) > 1;
     }
     return timeChange;
-  }, [state.time.updated]);
+  }, [state.time.updated, state.time.value]);
 
   // Optimize tick function with useCallback
   const tick = useCallback(() => {
@@ -49,6 +49,14 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
   }, []);
 
   // Optimize start/stop functions with useCallback
+  const stopTicking = useCallback(() => {
+    if (tickIntervalRef.current) {
+      clearInterval(tickIntervalRef.current);
+      tickIntervalRef.current = null;
+    }
+    setState(prevState => ({ ...prevState, active: false }));
+  }, []);
+
   const startTicking = useCallback(() => {
     if (tickIntervalRef.current) {
       return false;
@@ -59,15 +67,7 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
     tick();
     tickIntervalRef.current = setInterval(() => tick(), 1000);
     setState(prevState => ({ ...prevState, active: true }));
-  }, [state.time.value, tick]);
-
-  const stopTicking = useCallback(() => {
-    if (tickIntervalRef.current) {
-      clearInterval(tickIntervalRef.current);
-      tickIntervalRef.current = null;
-    }
-    setState(prevState => ({ ...prevState, active: false }));
-  }, []);
+  }, [state.time.value, tick, stopTicking]);
 
   // Handle prop changes with dependency optimization
   useEffect(() => {
@@ -111,7 +111,9 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
   const clockClassName = useMemo(() => state.active ? 'active' : 'inactive', [state.active]);
 
   // Remove debug console.log in production
+  // Debug only
   if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line no-console
     console.debug('Clock render');
   }
 

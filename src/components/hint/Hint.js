@@ -34,7 +34,8 @@ const Hint = React.memo(({ text, duration = 25 }) => {
   useEffect(() => {
     // Remove debug console.log in production
     if (process.env.NODE_ENV === 'development') {
-      console.debug('Hint.useEffect', { text, duration });
+      // eslint-disable-next-line no-console
+      console.debug('Hint.useEffect', { duration });
     }
 
     stopTimer();

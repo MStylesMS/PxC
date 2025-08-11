@@ -73,7 +73,7 @@ describe('Clock Component', () => {
   });
 
   test('countdown timer decreases time when active', () => {
-    const { rerender } = render(<Clock time={defaultTime} active={true} />);
+    render(<Clock time={defaultTime} active={true} />);
     
     act(() => {
       jest.advanceTimersByTime(1000);

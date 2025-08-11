@@ -52,8 +52,9 @@
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
     "format:check": "prettier --check src/**/*.{js,jsx,ts,tsx,json,css,md}",
     "perf:audit": "lighthouse http://localhost:3000 --output=html --output-path=./performance-report.html",
-    "perf:profile": "npm run build && npx serve -s build & sleep 5 && npx lighthouse http://localhost:3000",
-    "optimize:images": "npx imagemin src/**/*.{jpg,jpeg,png,gif,svg} --out-dir=src/optimized-images"
+  "perf:profile": "npm run build && npx serve -s build & sleep 5 && npx lighthouse http://localhost:3000",
+  "optimize:images": "npx imagemin src/**/*.{jpg,jpeg,png,gif,svg} --out-dir=src/optimized-images",
+  "smoke:visual": "bash scripts/visual-smoke.sh"
   },
   "eslintConfig": {
     "extends": [

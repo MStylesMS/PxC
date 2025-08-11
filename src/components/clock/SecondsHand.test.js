@@ -11,14 +11,16 @@ describe('SecondsHand Component', () => {
 
   test('applies animation class when animated', () => {
     render(<SecondsHand time={30} animated={true} />);
-    const element = screen.getByTestId('seconds-hand').parentElement;
+  // eslint-disable-next-line testing-library/no-node-access
+  const element = screen.getByTestId('seconds-hand').parentElement;
     expect(element).toHaveClass('ss');
     expect(element.className).toMatch(/tick-animation-/);
   });
 
   test('does not apply animation class when not animated', () => {
     render(<SecondsHand time={30} animated={false} />);
-    const element = screen.getByTestId('seconds-hand').parentElement;
+  // eslint-disable-next-line testing-library/no-node-access
+  const element = screen.getByTestId('seconds-hand').parentElement;
     expect(element).toHaveClass('ss');
     expect(element.className).not.toMatch(/tick-animation-/);
   });

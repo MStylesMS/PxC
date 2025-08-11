@@ -31,39 +31,44 @@ class App extends Component {
 
     stream
       .pipe(
-        filter(response => response),
+        // Normalize payloads: accept already-parsed objects or JSON strings
         map(payload => {
           try {
-            return JSON.parse(payload);
+            if (payload == null) return null;
+            if (typeof payload === 'object') return payload;
+            if (typeof payload === 'string') return JSON.parse(payload);
+            return null;
           } catch (e) {
-            console.log(e);
+            // Swallow JSON parse errors
+            return null;
           }
-        })
+        }),
+        filter(cmd => !!cmd)
       )
       .subscribe(commandObject => {
         try {
-          if (commandObject.time) {
+          if (commandObject && commandObject.time) {
             let time = this.state.time;
             try {
               time = commandObject.time.split(':').map(t => Number(t));
               time = time[0] * 60 + time[1];
               if (isNaN(time)) time = this.state.time;
-            } catch (e) {}
+    } catch (e) {}
             this.setState({
               time: {
                 value: time,
                 updated: new Date().getTime(),
               },
             });
-          } else if (commandObject.hint) {
+          } else if (commandObject && commandObject.hint) {
             this.setState({
               hint: commandObject.hint,
               duration: commandObject.duration,
             });
-          } else if (commandObject.command) {
+          } else if (commandObject && commandObject.command) {
             switch (commandObject.command) {
               case 'start':
-                this.setState({ active: true });
+                this.setState({ active: true, shown: true });
                 break;
               case 'pause':
                 this.setState({ active: false, fadeDuration: commandObject.duration || 2000 });
@@ -75,16 +80,19 @@ class App extends Component {
                 this.setState({ shown: true, fadeDuration: commandObject.duration || 2000 });
                 break;
               default:
-                console.warn(`Unexpected command object: ${JSON.stringify(commandObject)}`);
+        // eslint-disable-next-line no-console
+        console.warn(`Unexpected command object: ${JSON.stringify(commandObject)}`);
             }
           }
         } catch (e) {
-          console.log(e);
+      // eslint-disable-next-line no-console
+      console.log(e);
         }
       });
   }
 
   render() {
+    // eslint-disable-next-line no-console
     console.debug('App render');
     const appClasses = `App ${this.state.shown ? 'shown' : 'hidden'}`;
     const appStyle = { animationDuration: `${this.state.fadeDuration}ms` };

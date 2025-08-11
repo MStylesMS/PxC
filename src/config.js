@@ -37,8 +37,10 @@ try {
 // 3) Node-only .ini loading (tests/tooling)
 if (typeof window === 'undefined') {
   try {
-    const fs = eval('require')(/* webpackIgnore: true */ 'fs');
-    const ini = eval('require')(/* webpackIgnore: true */ 'ini');
+  // eslint-disable-next-line no-eval
+  const fs = eval('require')(/* webpackIgnore: true */ 'fs');
+  // eslint-disable-next-line no-eval
+  const ini = eval('require')(/* webpackIgnore: true */ 'ini');
     const configPath = `config/${env}.ini`;
     const iniContent = fs.readFileSync(configPath, 'utf-8');
     const parsed = ini.parse(iniContent);
@@ -52,8 +54,20 @@ if (typeof window === 'undefined') {
     // No .ini available in Node – stick with defaults
     if (process && process.env && process.env.NODE_ENV !== 'test') {
       // Reduce noise during tests
+      // eslint-disable-next-line no-console
       console.warn(`Config: using defaults (${env}); ${e.message}`);
     }
+  }
+} else {
+  // In browser, ensure mqtt.host follows window.location.hostname unless explicitly overridden via window.__APP_CONFIG__
+  try {
+    const hostFromWindow = window && window.location && window.location.hostname;
+    const overridden = !!(window && window.__APP_CONFIG__ && window.__APP_CONFIG__.mqtt && window.__APP_CONFIG__.mqtt.host);
+    if (hostFromWindow && !overridden) {
+      config = { ...config, mqtt: { ...config.mqtt, host: hostFromWindow } };
+    }
+  } catch (_) {
+    // ignore
   }
 }
 

@@ -33,18 +33,22 @@ const initializeMQTTClient = () => {
     // Optimized connection lost handler
     client.onConnectionLost = (responseObject) => {
       if (process.env.NODE_ENV === 'development' || config.enable_console_logging) {
-        console.log('MQTT Trace Log:', client.getTraceLog());
+        // eslint-disable-next-line no-console
+        console.debug('MQTT Trace Log:', client.getTraceLog());
       }
       connect$.next(false);
       if (responseObject.errorCode !== 0) {
+        // eslint-disable-next-line no-console
         console.error('MQTT Connection Lost:', responseObject.errorMessage);
         // Implement exponential backoff reconnection
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           const delay = RECONNECT_DELAY * Math.pow(2, reconnectAttempts);
           reconnectAttempts++;
-          console.log(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts})`);
+          // eslint-disable-next-line no-console
+          console.debug(`Attempting to reconnect in ${delay}ms (attempt ${reconnectAttempts})`);
           setTimeout(() => connectClient(), delay);
         } else {
+          // eslint-disable-next-line no-console
           console.error('Max reconnection attempts reached. Please refresh the page.');
         }
       }
@@ -55,13 +59,15 @@ const initializeMQTTClient = () => {
       try {
         subscribeEmitter.emit(message.destinationName, message.payloadString);
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Error processing MQTT message:', error);
       }
     };
 
     return true;
   } catch (error) {
-    console.error('Failed to initialize MQTT client:', error);
+  // eslint-disable-next-line no-console
+  console.error('Failed to initialize MQTT client:', error);
     return false;
   }
 };
@@ -75,12 +81,14 @@ const connectClient = () => {
   const connectOptions = {
     timeout: CONNECTION_TIMEOUT / 1000,
     onSuccess: () => {
-      console.log('MQTT Connected successfully');
+  // eslint-disable-next-line no-console
+  console.debug('MQTT Connected successfully');
       connect$.next(true);
       reconnectAttempts = 0; // Reset reconnection attempts on successful connection
     },
     onFailure: (error) => {
-      console.error('MQTT Connection failed:', error.errorMessage);
+  // eslint-disable-next-line no-console
+  console.error('MQTT Connection failed:', error.errorMessage);
       connect$.next(false);
       
       // Retry connection with exponential backoff
@@ -95,7 +103,8 @@ const connectClient = () => {
   try {
     client.connect(connectOptions);
   } catch (error) {
-    console.error('MQTT Connect error:', error);
+  // eslint-disable-next-line no-console
+  console.error('MQTT Connect error:', error);
     connect$.next(false);
   }
 };
@@ -107,7 +116,7 @@ connectClient();
 
 
 // Optimized MQTT service
-export default {
+const MQTTService = {
   subscribe: function (topic) {
     // Use topic from config if not provided
     const subTopic = topic || (config.mqtt && config.mqtt.topic) || 'Paradox/Houdini/Mirror/Clock/Commands';
@@ -117,11 +126,12 @@ export default {
         try {
           client.subscribe(subTopic);
           const topicSubscribe$ = new Subject();
-          const listener = (response) => {
+      const listener = (response) => {
             try {
               topicSubscribe$.next(response);
             } catch (error) {
-              console.error('Error in MQTT subscription listener:', error);
+        // eslint-disable-next-line no-console
+        console.error('Error in MQTT subscription listener:', error);
             }
           };
           subscribeEmitter.addListener(subTopic, listener);
@@ -129,12 +139,14 @@ export default {
           return topicSubscribe$.pipe(
             takeUntil(connect$.pipe(filter(connected => !connected))),
             catchError(error => {
-              console.error('MQTT subscription error:', error);
+        // eslint-disable-next-line no-console
+        console.error('MQTT subscription error:', error);
               return timer(1000).pipe(switchMap(() => this.subscribe(subTopic)));
             })
           );
         } catch (error) {
-          console.error('Failed to subscribe to MQTT topic:', subTopic, error);
+      // eslint-disable-next-line no-console
+      console.error('Failed to subscribe to MQTT topic:', subTopic, error);
           throw error;
         }
       }),
@@ -154,15 +166,18 @@ export default {
           }
           client.publish(pubTopic, payload, 2, retained);
           if (process.env.NODE_ENV === 'development' || config.enable_console_logging) {
-            console.log('MQTT Published:', { pubTopic, payload, retained });
+            // eslint-disable-next-line no-console
+            console.debug('MQTT Published:', { pubTopic, payload, retained });
           }
           return true;
         } catch (error) {
+          // eslint-disable-next-line no-console
           console.error('Failed to publish MQTT message:', error);
           throw error;
         }
       }),
       catchError(error => {
+        // eslint-disable-next-line no-console
         console.error('MQTT publish error:', error);
         throw error;
       })
@@ -187,7 +202,10 @@ export default {
       }
       connect$.next(false);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error disconnecting MQTT client:', error);
     }
   }
 };
+
+export default MQTTService;

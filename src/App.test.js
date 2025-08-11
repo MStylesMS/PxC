@@ -1,4 +1,5 @@
-// Mock MQTT module BEFORE importing App
+/* eslint-disable import/first */
+/* Mock MQTT before importing App */
 jest.mock('./MQTT', () => ({
   __esModule: true,
   default: {
@@ -9,7 +10,7 @@ jest.mock('./MQTT', () => ({
 }));
 
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import App from './App';
 
