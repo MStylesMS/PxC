@@ -61,7 +61,7 @@ export default function Hint({ text, duration = 25 }) {
   }, [text, duration]);
 
   return (
-    <div id="hint" className={state.shown ? 'shown' : ''}>
+    <div id="hint" data-testid="hint" className={state.shown ? 'shown' : ''}>
       <div>{state.text}</div>
     </div>
   );

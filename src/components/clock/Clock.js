@@ -94,11 +94,11 @@ export default function Clock({ active, time: propTime }) {
 
   console.debug('Clock render');
   return (
-    <div id="clock">
+    <div id="clock" data-testid="clock" className={state.active ? 'active' : 'inactive'}>
       <div id="a">
         <div id="b">
-          {state.withMin && <MinutesHand time={state.time.value} />}
-          <SecondsHand time={state.time.value} animated={state.active} />
+          {state.withMin && <MinutesHand time={state.time.value} data-testid="minutes-hand" />}
+          <SecondsHand time={state.time.value} animated={state.active} data-testid="seconds-hand" />
         </div>
       </div>
     </div>

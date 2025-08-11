@@ -13,6 +13,9 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "prettier": "^3.3.3"
   },
   "scripts": {
@@ -35,8 +38,22 @@
     "rules": {
       "react-hooks/exhaustive-deps": "warn",
       "react-hooks/rules-of-hooks": "error",
-      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-      "no-console": ["warn", { "allow": ["warn", "error", "debug"] }]
+      "no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_"
+        }
+      ],
+      "no-console": [
+        "warn",
+        {
+          "allow": [
+            "warn",
+            "error",
+            "debug"
+          ]
+        }
+      ]
     }
   },
   "browserslist": {

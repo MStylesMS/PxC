@@ -80,9 +80,17 @@ class App extends Component {
     const appClasses = `App ${this.state.shown ? 'shown' : 'hidden'}`;
     const appStyle = { animationDuration: `${this.state.fadeDuration}ms` };
     return (
-      <div className={appClasses} style={appStyle}>
-        <Clock active={this.state.active} time={this.state.time}></Clock>
-        <Hint text={this.state.hint} duration={this.state.duration}></Hint>
+      <div className={appClasses} style={appStyle} role="main" data-testid="app">
+        <Clock 
+          active={this.state.active} 
+          time={this.state.time} 
+          data-testid="clock"
+        />
+        <Hint 
+          text={this.state.hint} 
+          duration={this.state.duration} 
+          data-testid="hint"
+        />
       </div>
     );
   }

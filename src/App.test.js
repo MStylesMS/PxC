@@ -1,10 +1,41 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import App from './App';
-import * as MQTT from './MQTT';
 
-it('renders without crashing', () => {
-  const div = document.createElement('div');
-  ReactDOM.render(<App />, div);
-  ReactDOM.unmountComponentAtNode(div);
+// Mock MQTT module
+jest.mock('./MQTT', () => ({
+  __esModule: true,
+  default: {
+    subscribe: jest.fn(() => ({
+      pipe: jest.fn(() => ({
+        subscribe: jest.fn(),
+      })),
+    })),
+  },
+}));
+
+describe('App Component', () => {
+  test('renders without crashing', () => {
+    render(<App />);
+    expect(screen.getByRole('main')).toBeInTheDocument();
+  });
+
+  test('renders clock component', () => {
+    render(<App />);
+    const clockElement = screen.getByTestId('clock');
+    expect(clockElement).toBeInTheDocument();
+  });
+
+  test('renders hint component', () => {
+    render(<App />);
+    const hintElement = screen.getByTestId('hint');
+    expect(hintElement).toBeInTheDocument();
+  });
+
+  test('initializes with default state', () => {
+    render(<App />);
+    // App should start in inactive state
+    expect(screen.getByTestId('clock')).toHaveClass('inactive');
+  });
 });
