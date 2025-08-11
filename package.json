@@ -1,7 +1,26 @@
 {
-  "name": "180624_houdini",
-  "version": "0.1.0",
+  "name": "houdini-clock",
+  "version": "1.0.1",
+  "description": "React-based countdown clock interface for Houdini escape room with MQTT control",
   "private": true,
+  "keywords": [
+    "escape-room",
+    "countdown-clock",
+    "mqtt",
+    "react",
+    "real-time",
+    "paradox"
+  ],
+  "author": "Paradox Escape Rooms",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paradox/houdini-clock.git"
+  },
+  "bugs": {
+    "url": "https://github.com/paradox/houdini-clock/issues"
+  },
+  "homepage": "https://github.com/paradox/houdini-clock#readme",
   "dependencies": {
     "cross-env": "^7.0.3",
     "fbemitter": "^3.0.0",

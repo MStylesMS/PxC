@@ -1,0 +1,478 @@
+# Deployment Guide
+
+This guide covers deployment strategies and configurations for the Houdini Clock application.
+
+## 🚀 Deployment Options
+
+### 1. Static Hosting (Recommended)
+
+The Houdini Clock is a React SPA that builds to static files, making it ideal for static hosting platforms.
+
+#### Netlify Deployment
+
+```bash
+# Build the application
+npm run build
+
+# Deploy to Netlify (one-time setup)
+npm install -g netlify-cli
+netlify login
+netlify init
+netlify deploy --prod --dir=build
+```
+
+**Netlify Configuration** (`netlify.toml`):
+```toml
+[build]
+  publish = "build"
+  command = "npm run build"
+
+[build.environment]
+  REACT_APP_MQTT_HOST = "your-mqtt-broker.com"
+  REACT_APP_MQTT_PORT = "8883"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+#### Vercel Deployment
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Deploy
+vercel --prod
+```
+
+**Vercel Configuration** (`vercel.json`):
+```json
+{
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build"
+    }
+  ],
+  "env": {
+    "REACT_APP_MQTT_HOST": "your-mqtt-broker.com",
+    "REACT_APP_MQTT_PORT": "8883"
+  }
+}
+```
+
+#### GitHub Pages
+
+```bash
+# Install gh-pages
+npm install --save-dev gh-pages
+
+# Add to package.json scripts
+{
+  "homepage": "https://yourusername.github.io/houdiniclock",
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  }
+}
+
+# Deploy
+npm run deploy
+```
+
+### 2. Docker Deployment
+
+#### Dockerfile
+
+```dockerfile
+# Build stage
+FROM node:18-alpine as build
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . ./
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+
+# Copy build files
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose port
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+#### Nginx Configuration (`nginx.conf`)
+
+```nginx
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    server {
+        listen 80;
+        server_name localhost;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Handle React Router
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Static assets with caching
+        location /static/ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+    }
+}
+```
+
+#### Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  houdini-clock:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - REACT_APP_MQTT_HOST=mqtt-broker
+      - REACT_APP_MQTT_PORT=1883
+    depends_on:
+      - mqtt-broker
+
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+```
+
+### 3. Node.js Server Deployment
+
+For environments requiring a Node.js server:
+
+#### Express Server Setup
+
+```javascript
+// server.js
+const express = require('express');
+const path = require('path');
+const app = express();
+
+// Serve static files from build directory
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Handle React Router
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+```
+
+#### PM2 Configuration (`ecosystem.config.js`)
+
+```javascript
+module.exports = {
+  apps: [{
+    name: 'houdini-clock',
+    script: 'server.js',
+    instances: 'max',
+    exec_mode: 'cluster',
+    env: {
+      NODE_ENV: 'production',
+      PORT: 3000,
+      REACT_APP_MQTT_HOST: 'localhost',
+      REACT_APP_MQTT_PORT: '1883'
+    }
+  }]
+};
+```
+
+## ⚙️ Environment Configuration
+
+### Production Environment Variables
+
+Create a `.env.production` file:
+
+```bash
+# MQTT Configuration
+REACT_APP_MQTT_HOST=production-mqtt-broker.com
+REACT_APP_MQTT_PORT=8883
+REACT_APP_MQTT_TOPIC=Paradox/Houdini/Mirror/Clock/Commands
+
+# Application Settings
+REACT_APP_VERSION=1.0.1
+REACT_APP_ENVIRONMENT=production
+
+# Build Optimization
+GENERATE_SOURCEMAP=false
+INLINE_RUNTIME_CHUNK=false
+```
+
+### Development vs Production
+
+| Setting | Development | Production |
+|---------|-------------|------------|
+| MQTT Host | localhost | production-broker.com |
+| MQTT Port | 1884 | 8883 (SSL) |
+| Source Maps | true | false |
+| Debug Mode | true | false |
+| Hot Reload | true | false |
+
+## 🔒 Security Considerations
+
+### MQTT Security
+
+1. **Use TLS/SSL**:
+   ```bash
+   # Production MQTT with SSL
+   REACT_APP_MQTT_PORT=8883
+   REACT_APP_MQTT_SSL=true
+   ```
+
+2. **Authentication**:
+   ```javascript
+   // Add to MQTT.js if needed
+   const connectOptions = {
+     userName: process.env.REACT_APP_MQTT_USER,
+     password: process.env.REACT_APP_MQTT_PASS,
+     useSSL: process.env.REACT_APP_MQTT_SSL === 'true'
+   };
+   ```
+
+3. **Network Security**:
+   - Restrict MQTT broker access to known IPs
+   - Use VPN for escape room network
+   - Enable firewall rules
+
+### Web Application Security
+
+1. **Content Security Policy** (add to `public/index.html`):
+   ```html
+   <meta http-equiv="Content-Security-Policy" 
+         content="default-src 'self'; 
+                  connect-src 'self' ws://localhost:* wss://*.yourdomain.com;
+                  style-src 'self' 'unsafe-inline';">
+   ```
+
+2. **HTTPS Configuration**:
+   ```nginx
+   server {
+       listen 443 ssl http2;
+       ssl_certificate /path/to/certificate.crt;
+       ssl_certificate_key /path/to/private.key;
+       
+       # Security headers
+       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+   }
+   ```
+
+## 📊 Monitoring & Analytics
+
+### Health Checks
+
+Create `public/health.json`:
+```json
+{
+  "status": "healthy",
+  "version": "1.0.1",
+  "timestamp": "2025-01-01T00:00:00Z"
+}
+```
+
+### Performance Monitoring
+
+```javascript
+// Add to index.js for performance tracking
+if ('performance' in window) {
+  window.addEventListener('load', () => {
+    const perfData = performance.getEntriesByType('navigation')[0];
+    console.log('Page Load Time:', perfData.loadEventEnd - perfData.loadEventStart);
+  });
+}
+```
+
+### Error Tracking
+
+```javascript
+// Add error boundary for production
+window.addEventListener('error', (event) => {
+  if (process.env.NODE_ENV === 'production') {
+    // Send to error tracking service
+    console.error('Global error:', event.error);
+  }
+});
+```
+
+## 🔧 Troubleshooting
+
+### Common Deployment Issues
+
+1. **Build Failures**:
+   ```bash
+   # Clear caches and rebuild
+   rm -rf node_modules package-lock.json
+   npm install
+   npm run build
+   ```
+
+2. **MQTT Connection Issues**:
+   ```bash
+   # Test MQTT connectivity
+   curl -v ws://your-mqtt-broker.com:9001
+   
+   # Check browser console for WebSocket errors
+   ```
+
+3. **Static File 404s**:
+   - Verify `homepage` in `package.json`
+   - Check web server configuration for SPA routing
+   - Ensure build files are in correct directory
+
+4. **Environment Variables Not Loading**:
+   ```bash
+   # Verify environment variables are set
+   echo $REACT_APP_MQTT_HOST
+   
+   # Check build output includes variables
+   grep -r "REACT_APP" build/
+   ```
+
+### Performance Issues
+
+1. **Slow Loading**:
+   - Enable gzip compression
+   - Optimize image assets
+   - Use CDN for static files
+
+2. **Memory Leaks**:
+   - Check for proper cleanup in `useEffect`
+   - Monitor MQTT connection management
+   - Use browser memory profiler
+
+### Network Diagnostics
+
+```bash
+# Test MQTT broker connectivity
+telnet mqtt-broker.com 1883
+
+# WebSocket test
+wscat -c ws://mqtt-broker.com:9001
+
+# SSL certificate check
+openssl s_client -connect mqtt-broker.com:8883
+```
+
+## 📈 Scaling Considerations
+
+### Load Balancing
+
+For multiple escape rooms:
+
+```nginx
+upstream houdini_backend {
+    server room1.yourdomain.com;
+    server room2.yourdomain.com;
+    server room3.yourdomain.com;
+}
+
+server {
+    location / {
+        proxy_pass http://houdini_backend;
+    }
+}
+```
+
+### CDN Configuration
+
+```javascript
+// webpack.config.js (if ejected)
+module.exports = {
+  output: {
+    publicPath: process.env.NODE_ENV === 'production' 
+      ? 'https://cdn.yourdomain.com/' 
+      : '/'
+  }
+};
+```
+
+## 🚦 Deployment Checklist
+
+### Pre-deployment
+
+- [ ] All tests pass (`npm test`)
+- [ ] Build completes successfully (`npm run build`)
+- [ ] Environment variables configured
+- [ ] MQTT broker accessible
+- [ ] SSL certificates valid (if using HTTPS)
+- [ ] Performance testing completed
+
+### Post-deployment
+
+- [ ] Health check endpoint responding
+- [ ] MQTT connection working
+- [ ] Clock countdown functioning
+- [ ] Hint system operational
+- [ ] Fade effects working
+- [ ] No console errors
+- [ ] Mobile responsiveness verified
+
+### Monitoring Setup
+
+- [ ] Error tracking configured
+- [ ] Performance monitoring enabled
+- [ ] Uptime monitoring setup
+- [ ] Log aggregation configured
+- [ ] Backup procedures tested
+
+## 📞 Support
+
+### Deployment Issues
+
+1. Check the [troubleshooting section](#🔧-troubleshooting)
+2. Review server logs and browser console
+3. Verify environment configuration
+4. Test MQTT connectivity separately
+
+### Performance Problems
+
+1. Run build analysis: `npm run build:analyze`
+2. Check network tab in browser dev tools
+3. Monitor MQTT message frequency
+4. Review component re-render patterns
+
+---
+
+**Last Updated**: 2025  
+**Version Compatibility**: 1.0.1+  
+**Node.js Requirements**: 16+

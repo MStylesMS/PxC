@@ -1,25 +1,245 @@
-## Houdini escape room project
+# Houdini Clock - Escape Room Countdown System
 
-### Clock
+A React-based countdown clock interface for escape room experiences, featuring real-time MQTT communication and dynamic visual elements.
 
-### Install
+## 📸 Screenshot
 
-`yarn install`
+![Houdini Clock Interface](docs/Sample%20Clock.png)
 
-### Run
+## 🌟 Features
 
-`yarn instart`
+- **Real-time Countdown Clock**: Analog clock display with animated second and minute hands
+- **MQTT Integration**: Real-time communication for remote control and monitoring
+- **Dynamic Hints System**: Temporary hint overlays with auto-hide functionality
+- **Responsive Design**: Optimized for various screen sizes and resolutions
+- **Fade Effects**: Smooth fade-in/fade-out transitions for enhanced user experience
+- **Escape Room Integration**: Designed specifically for escape room control systems
 
-### MQTT connection credentials
+## 🚀 Quick Start
 
-Edit `package.json`'s `start` script to set proper MQTT host, port, etc.
+### Prerequisites
 
-### Development environment
+- Node.js 16+ (tested with Node.js 24.4.0)
+- npm or yarn package manager
+- MQTT broker (default configuration expects localhost:1884)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd houdiniclock
+
+# Install dependencies
+npm install
+# or
+yarn install
 ```
-"start": "cross-env REACT_APP_MQTT_HOST=mqtt-example.com REACT_APP_MQTT_PORT=8383 react-scripts start"
+
+### Development
+
+```bash
+# Start development server
+npm start
+# or
+yarn start
 ```
 
-### Production environment
+The application will start on `http://localhost:3000` by default.
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+# or
+yarn build
+
+# Serve production build locally (optional)
+npm run build:analyze
 ```
-"build": "cross-env REACT_APP_MQTT_HOST=mqtt-example.com REACT_APP_MQTT_PORT=8383 react-scripts start"
+
+## ⚙️ Configuration
+
+### MQTT Settings
+
+Configure MQTT connection by editing environment variables in the start/build scripts or using a `.env` file:
+
+```bash
+# Default development configuration
+REACT_APP_MQTT_HOST=localhost
+REACT_APP_MQTT_PORT=1884
 ```
+
+### Environment-specific Configuration
+
+#### Development
+```json
+"start": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start"
+```
+
+#### Production
+```json
+"build": "cross-env REACT_APP_MQTT_HOST=your-mqtt-broker.com REACT_APP_MQTT_PORT=8883 react-scripts build"
+```
+
+## 📡 MQTT Commands
+
+The clock listens to the topic `Paradox/Houdini/Mirror/Clock/Commands` and responds to these commands:
+
+### Time Control
+- `time <seconds>` - Set countdown time in seconds
+- `start` - Start the countdown timer
+- `pause` - Pause the countdown timer
+
+### Visual Effects
+- `fadein` - Fade in the clock display
+- `fadeout` - Fade out the clock display
+
+### Hints System
+- `hint <message>` - Display a hint message overlay
+
+### Example Commands
+```
+time 300        # Set 5-minute countdown
+start           # Begin countdown
+hint Welcome!   # Show welcome message
+pause           # Pause the timer
+fadeout         # Fade out display
+```
+
+For detailed MQTT message specifications, see [MQTT Commands Documentation](docs/Houdini%20MQTT%20Messages%20Clock.pdf).
+
+## 🛠️ Development
+
+### Available Scripts
+
+```bash
+npm start              # Start development server
+npm run build          # Create production build
+npm run build:analyze  # Build and serve with analysis
+npm test               # Run test suite
+npm run test:coverage  # Run tests with coverage report
+npm run lint           # Run ESLint
+npm run lint:fix       # Fix ESLint issues automatically
+npm run format         # Format code with Prettier
+npm run format:check   # Check code formatting
+```
+
+### Testing
+
+The project includes comprehensive test coverage using React Testing Library:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in CI mode
+CI=true npm test
+```
+
+### Code Quality
+
+- **ESLint**: Enforces code style and catches potential issues
+- **Prettier**: Maintains consistent code formatting
+- **React Hooks**: Modern functional components with hooks
+- **Testing Library**: Component testing with user-centric approach
+
+## 🏗️ Architecture
+
+### Component Structure
+
+```
+src/
+├── App.js                    # Main application component
+├── MQTT.js                   # MQTT client configuration
+├── index.js                  # Application entry point
+└── components/
+    ├── clock/
+    │   ├── Clock.js          # Main clock container
+    │   ├── SecondsHand.js    # Seconds hand component
+    │   ├── MinutesHand.js    # Minutes hand component
+    │   └── bg.png            # Clock background image
+    └── hint/
+        └── Hint.js           # Hint overlay component
+```
+
+### Technology Stack
+
+- **Frontend**: React 18.3.1 with modern hooks
+- **MQTT**: RxJS 7.8.1 + Paho MQTT for real-time communication
+- **Build Tools**: react-scripts 5.0.1, Webpack 5
+- **Testing**: Jest, React Testing Library
+- **Code Quality**: ESLint, Prettier
+- **Styling**: CSS modules with responsive design
+
+## 📚 Documentation
+
+Additional documentation can be found in the `docs/` directory:
+
+- [MQTT Messages Specification](docs/Houdini%20MQTT%20Messages%20Clock.pdf)
+- [Web Control Interface](docs/Houdini%20Web%20Control.pdf)
+- [Clock Face Design](docs/Countdown_Clock%20Face.png)
+- [Setup Commands](docs/commands.txt)
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **MQTT Connection Failed**
+   - Verify MQTT broker is running on specified host/port
+   - Check firewall settings for MQTT port access
+   - Ensure WebSocket support is enabled on MQTT broker
+
+2. **Clock Not Updating**
+   - Check browser console for JavaScript errors
+   - Verify MQTT messages are being received
+   - Ensure proper time format in MQTT commands
+
+3. **Build Errors**
+   - Update Node.js to version 16 or higher
+   - Clear npm cache: `npm cache clean --force`
+   - Delete `node_modules` and reinstall dependencies
+
+### Performance Tips
+
+- Use production build for deployment
+- Enable gzip compression on web server
+- Optimize images in the `public/` directory
+- Monitor MQTT message frequency for performance
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Submit a pull request
+
+### Development Workflow
+
+- Follow the existing code style (ESLint + Prettier)
+- Write tests for new components
+- Update documentation as needed
+- Ensure all tests pass before submitting
+
+## 📄 License
+
+This project is part of the Paradox Escape Room system. All rights reserved.
+
+## 📞 Support
+
+For technical support or questions:
+- Check the [documentation](docs/) directory
+- Review [troubleshooting](#🔧-troubleshooting) section
+- Contact the development team
+
+---
+
+**Version**: 1.0.1+ (Modernized)  
+**Last Updated**: 2025  
+**Node.js Compatibility**: 16+  
+**React Version**: 18.3.1
