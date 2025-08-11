@@ -1,49 +1,50 @@
 body {
-    width: 100%;
-    height: 100%;
-    background-color: black;
+  width: 100%;
+  height: 100%;
+  background-color: black;
 }
 
-body, .App {
-    padding: 0;
-    margin: 0;
+body,
+.App {
+  padding: 0;
+  margin: 0;
 }
 
 .App {
-    width: 100vw;
-    height: 100vh;
-    text-align: center;
-    overflow: hidden;
-    animation-timing-function: steps(25, start);
-    animation-delay: initial;
-    animation-iteration-count: 1;
-    animation-direction: initial;
-    animation-fill-mode: forwards;
-    animation-play-state: initial;
+  width: 100vw;
+  height: 100vh;
+  text-align: center;
+  overflow: hidden;
+  animation-timing-function: steps(25, start);
+  animation-delay: initial;
+  animation-iteration-count: 1;
+  animation-direction: initial;
+  animation-fill-mode: forwards;
+  animation-play-state: initial;
 }
 
 .App.shown {
-    animation-name: fadeIn;
+  animation-name: fadeIn;
 }
 
 .App.hidden {
-    animation-name: fadeOut;
+  animation-name: fadeOut;
 }
 
 @keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-    100% {
-        opacity: 1;
-    }
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-    0% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-    }
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }

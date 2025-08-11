@@ -1,37 +1,37 @@
 .s {
-    width: calc(85vh / 3 / 10);
-    height: calc(85vh / 3);
-    top: calc(85vh / 2 - 85vh / 3 + 5px);
-    left: calc(85vh / 2 - (85vh / 3 / 10) / 2 + 5px);
-    position: absolute;
-    background-image: url("seconds_hand_sm.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center center;
+  width: calc(85vh / 3 / 10);
+  height: calc(85vh / 3);
+  top: calc(85vh / 2 - 85vh / 3 + 5px);
+  left: calc(85vh / 2 - (85vh / 3 / 10) / 2 + 5px);
+  position: absolute;
+  background-image: url('seconds_hand_sm.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 .sr {
-    width: 0.3em;
-    height: 0.3em;
-    background: #a00;
-    /*margin: -0.95em 0 0 3.84em;*/
-    border-radius: 100%;
+  width: 0.3em;
+  height: 0.3em;
+  background: #a00;
+  /*margin: -0.95em 0 0 3.84em;*/
+  border-radius: 100%;
 }
 
 .ss {
-    animation-duration: 1000ms;
-    animation-timing-function: steps(25, start);
-    animation-delay: initial;
-    animation-iteration-count: 1;
-    animation-direction: initial;
-    animation-fill-mode: forwards;
-    animation-play-state: initial;
+  animation-duration: 1000ms;
+  animation-timing-function: steps(25, start);
+  animation-delay: initial;
+  animation-iteration-count: 1;
+  animation-direction: initial;
+  animation-fill-mode: forwards;
+  animation-play-state: initial;
 }
 
 .ss.tick-animation-0 {
-    animation-name: tick1;
+  animation-name: tick1;
 }
 
 .ss.tick-animation-1 {
-    animation-name: tick2;
+  animation-name: tick2;
 }
