@@ -1,10 +1,9 @@
-import {BehaviorSubject, Observable, Subject} from 'rxjs';
-import {filter, switchMap} from 'rxjs/operators';
+import {BehaviorSubject, of, Subject} from 'rxjs';
+import {filter, map, switchMap} from 'rxjs/operators';
 
 // Create a client instance
 import {Client} from "paho-mqtt";
-
-const {EventEmitter} = require('fbemitter');
+import {EventEmitter} from 'fbemitter';
 
 const clientId = `180624_houdini[${Math.round(Math.random() * 100000).toString(16)}]`;
 const client = new Client(process.env.REACT_APP_MQTT_HOST, Number(process.env.REACT_APP_MQTT_PORT), clientId);
@@ -44,10 +43,12 @@ export default {
     },
     publish: function (topic, payload, retained) {
         return connect$
-            .filter(connected => connected)
-            .map(() => {
-                client.publish(topic, payload, 2, retained);
-                return Observable.of(true);
-            });
+            .pipe(
+                filter(connected => connected),
+                map(() => {
+                    client.publish(topic, payload, 2, retained);
+                    return true;
+                })
+            );
     }
 };
