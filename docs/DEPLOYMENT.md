@@ -34,15 +34,19 @@ sudo systemctl start mosquitto
 mosquitto -p 1884
 ```
 
-#### Configure WebSocket Support
-Edit `/etc/mosquitto/mosquitto.conf`:
-```
-# Standard MQTT port
-port 1883
 
-# WebSocket port for browser clients
+#### Configure Mosquitto for TCP and WebSocket
+Edit `/etc/mosquitto/mosquitto.conf` to support both CLI and browser clients:
+```
+listener 1883 0.0.0.0
+protocol mqtt
+
 listener 1884
 protocol websockets
+```
+Restart Mosquitto after editing:
+```bash
+sudo systemctl restart mosquitto
 ```
 
 ### 2. Application Configuration

@@ -7,21 +7,31 @@ This document provides a complete reference for all MQTT commands supported by t
 
 ## Connection Details
 
+
 ### MQTT Configuration
-- **Topic**: `paradox/houdini/mirror/clock/commands` *(corrected format)*
-- **Legacy Topic**: `Paradox/Houdini/Mirror/Clock/Commands` *(current implementation)*
+- **Topic**: `paradox/houdini/mirror/clock/commands` *(corrected format, use after migration)*
+- **Legacy Topic**: `Paradox/Houdini/Mirror/Clock/Commands` *(current implementation, use now)*
 - **Protocol**: WebSocket MQTT (for browser compatibility)
-- **Default Port**: 1884 (WebSocket), 1883 (standard MQTT)
+- **Default Ports**: 1883 (standard MQTT, CLI/tools), 1884 (WebSocket, browser)
 - **Message Format**: JSON
 
-### Environment Configuration
-The MQTT broker connection will be configured via .ini files (see ISSUE-9):
-```ini
-[mqtt]
-host = localhost
-port = 1884
-topic = paradox/houdini/mirror/clock/commands
+#### Mosquitto Example Config
+```conf
+listener 1883 0.0.0.0
+protocol mqtt
+
+listener 1884
+protocol websockets
 ```
+
+Restart Mosquitto after editing:
+```bash
+sudo systemctl restart mosquitto
+```
+
+
+### Environment Configuration
+The MQTT broker connection will be migrated to `.ini` files (see planned PR/ISSUE-9). For now, configure via environment variables or package.json scripts.
 
 ## Command Categories
 

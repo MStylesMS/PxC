@@ -61,6 +61,24 @@ npm run build:analyze
 
 ## ⚙️ Configuration
 
+
+### MQTT Broker Configuration (TCP + WebSocket)
+
+To support both CLI tools and browser-based apps, configure your Mosquitto broker as follows (in `/etc/mosquitto/mosquitto.conf`):
+
+```conf
+listener 1883 0.0.0.0
+protocol mqtt
+
+listener 1884
+protocol websockets
+```
+
+Restart Mosquitto after editing:
+```bash
+sudo systemctl restart mosquitto
+```
+
 ### MQTT Settings
 
 Configure MQTT connection by editing environment variables in the start/build scripts or using a `.env` file:
@@ -83,9 +101,10 @@ REACT_APP_MQTT_PORT=1884
 "build": "cross-env REACT_APP_MQTT_HOST=your-mqtt-broker.com REACT_APP_MQTT_PORT=8883 react-scripts build"
 ```
 
+
 ## 📡 MQTT Commands
 
-The clock listens to the topic `Paradox/Houdini/Mirror/Clock/Commands` and responds to these commands:
+The clock listens to the topic `Paradox/Houdini/Mirror/Clock/Commands` (legacy, current) or `paradox/houdini/mirror/clock/commands` (future, see docs/MQTT-COMMANDS.md) and responds to these commands:
 
 ### Time Control
 - `time <seconds>` - Set countdown time in seconds
@@ -108,9 +127,15 @@ pause           # Pause the timer
 fadeout         # Fade out display
 ```
 
-For detailed MQTT message specifications, see [MQTT Commands Documentation](docs/Houdini%20MQTT%20Messages%20Clock.pdf).
+
+For detailed MQTT message specifications and migration plans, see [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md).
+
 
 ## 🛠️ Development
+
+### Next Milestone
+
+- [ ] Migrate MQTT topic, host, and port configuration to an `.ini` file for easier environment management (see docs/MQTT-COMMANDS.md and planned PR).
 
 ### Available Scripts
 
