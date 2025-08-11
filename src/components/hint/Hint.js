@@ -1,63 +1,68 @@
-import React, {PureComponent} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Hint.css';
 
 const FADEIN_ANIMATION_DURATION = 200;
 
-export default class Clock extends PureComponent {
-    timer = null;
+export default function Hint({ text, duration = 25 }) {
+    const [state, setState] = useState({
+        duration: 25,
+        text: '',
+        shown: false
+    });
+    const timerRef = useRef(null);
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            duration: 25,
-            text: '',
-            shown: false
+    const stopTimer = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
         }
-    }
+        timerRef.current = null;
+    };
 
-    componentDidUpdate(prevProps) {
-        console.debug('Hint.componentDidUpdate', this.props);
+    const startTimer = () => {
+        const timerDuration = state.duration * 1000 + FADEIN_ANIMATION_DURATION;
+        if (!isNaN(timerDuration)) {
+            timerRef.current = setTimeout(() => {
+                setState(prev => ({ ...prev, shown: false }));
+                timerRef.current = null;
+            }, timerDuration);
+        }
+    };
+
+    useEffect(() => {
+        console.debug('Hint.useEffect', { text, duration });
         
-        // Only process if text prop actually changed
-        if (prevProps.text !== this.props.text) {
-            this.stopTimer();
-            const text = this.props.text && this.props.text.trim();
-            if (text) {
-                this.setState({
-                    text: text,
-                    duration: this.props.duration || 25,
-                    shown: true
-                }, () => this.startTimer());
+        stopTimer();
+        const trimmedText = text && text.trim();
+        
+        if (trimmedText) {
+            setState({
+                text: trimmedText,
+                duration: duration || 25,
+                shown: true
+            });
+            // Start timer after state update
+            const timerDuration = (duration || 25) * 1000 + FADEIN_ANIMATION_DURATION;
+            if (!isNaN(timerDuration)) {
+                timerRef.current = setTimeout(() => {
+                    setState(prev => ({ ...prev, shown: false }));
+                    timerRef.current = null;
+                }, timerDuration);
             }
-            else
-                this.setState({
-                    text: null,
-                    duration: this.props.duration || 25,
-                    shown: false
-                });
+        } else {
+            setState({
+                text: null,
+                duration: duration || 25,
+                shown: false
+            });
         }
-    }
 
-    stopTimer() {
-        if (this.timer)
-            clearTimeout(this.timer);
-        this.timer = null;
-    }
+        // Cleanup timer on unmount
+        return () => stopTimer();
+    }, [text, duration]);
 
-    startTimer() {
-        const duration = this.state.duration * 1000 + FADEIN_ANIMATION_DURATION;
-        if (!isNaN(duration))
-            this.timer = setTimeout(() => {
-                this.setState({shown: false});
-                this.timer = null;
-            }, duration);
-    }
-
-    render() {
-        return (
-            <div id="hint" className={this.state.shown ? 'shown' : ''}>
-                <div>{this.state.text}</div>
-            </div>
-        );
-    }
+    return (
+        <div id="hint" className={state.shown ? 'shown' : ''}>
+            <div>{state.text}</div>
+        </div>
+    );
 }

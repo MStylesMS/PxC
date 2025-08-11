@@ -1,89 +1,109 @@
-import React, {Component} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Clock.css';
 import SecondsHand from "./SecondsHand";
 import MinutesHand from "./MinutesHand";
 
-export default class Clock extends Component {
-    tickInterval;
+export default function Clock({ active, time: propTime }) {
+    const [state, setState] = useState({
+        active: active || false,
+        time: propTime || { value: 0, updated: new Date().getTime() },
+        withMin: (propTime?.value || 0) >= 60
+    });
+    
+    const tickIntervalRef = useRef(null);
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            active: props.active || false,
-            time: props.time || {value: 0, updated: new Date().getTime()},
-            withMin: props.time.value >= 60
-        };
-    }
-
-    componentDidUpdate(prevProps) {
-        if (typeof(this.props.active) !== 'undefined' && prevProps.active !== this.props.active) {
-            if (this.props.active) {
-                this.startTicking();
-            }
-            else {
-                this.stopTicking();
-            }
-        }
+    const willTimeChange = (currentTime, currentActive) => {
         if (
-            this.willTimeChange(this.props, prevProps)
-        ) {
-            this.setState({
-                time: this.props.time,
-                withMin: this.props.time.value >= 60
-            });
-        }
-    }
-
-    willTimeChange(currentProps, prevProps) {
-        if (
-            typeof(currentProps.time) === 'undefined' ||
-            currentProps.time.updated <= this.state.time.updated
+            typeof(currentTime) === 'undefined' ||
+            currentTime.updated <= state.time.updated
         ) {
             return false;
         }
-        let timeChange = (currentProps.time.value - this.state.time.value) !== 0;
-        if (this.state.active) {
-            timeChange = Math.abs(currentProps.time.value - this.state.time.value) > 1;
+        let timeChange = (currentTime.value - state.time.value) !== 0;
+        if (currentActive) {
+            timeChange = Math.abs(currentTime.value - state.time.value) > 1;
         }
         return timeChange;
-    }
+    };
 
-    _tick() {
-        const nextTime = this.state.time.value - 1;
-        if (nextTime < 0) {
-            this.stopTicking();
-        }
-        else
-            this.setState({time: {...this.state.time, value: nextTime}});
-    }
+    const tick = () => {
+        setState(prevState => {
+            const nextTime = prevState.time.value - 1;
+            if (nextTime < 0) {
+                // Stop ticking
+                if (tickIntervalRef.current) {
+                    clearInterval(tickIntervalRef.current);
+                    tickIntervalRef.current = null;
+                }
+                return { ...prevState, active: false };
+            } else {
+                return {
+                    ...prevState,
+                    time: { ...prevState.time, value: nextTime }
+                };
+            }
+        });
+    };
 
-    startTicking() {
-        if (this.tickInterval)
+    const startTicking = () => {
+        if (tickIntervalRef.current) {
             return false;
-        else if (this.state.time.value <= 0)
-            return this.stopTicking();
-        this._tick();
-        this.tickInterval = setInterval(() => this._tick(), 1000);
-        this.setState({active: true});
-    }
+        } else if (state.time.value <= 0) {
+            return stopTicking();
+        }
+        
+        tick();
+        tickIntervalRef.current = setInterval(() => tick(), 1000);
+        setState(prevState => ({ ...prevState, active: true }));
+    };
 
-    stopTicking() {
-        clearTimeout(this.tickInterval);
-        this.tickInterval = null;
-        this.setState({active: false});
-    }
+    const stopTicking = () => {
+        if (tickIntervalRef.current) {
+            clearInterval(tickIntervalRef.current);
+            tickIntervalRef.current = null;
+        }
+        setState(prevState => ({ ...prevState, active: false }));
+    };
 
-    render() {
-        console.debug('Clock render');
-        return (
-            <div id="clock">
-                <div id="a">
-                    <div id="b">
-                        {this.state.withMin && <MinutesHand time={this.state.time.value}/>}
-                        <SecondsHand time={this.state.time.value} animated={this.state.active}/>
-                    </div>
+    // Handle prop changes
+    useEffect(() => {
+        if (typeof(active) !== 'undefined' && state.active !== active) {
+            if (active) {
+                startTicking();
+            } else {
+                stopTicking();
+            }
+        }
+    }, [active]);
+
+    useEffect(() => {
+        if (willTimeChange(propTime, state.active)) {
+            setState(prevState => ({
+                ...prevState,
+                time: propTime,
+                withMin: propTime.value >= 60
+            }));
+        }
+    }, [propTime]);
+
+    // Cleanup interval on unmount
+    useEffect(() => {
+        return () => {
+            if (tickIntervalRef.current) {
+                clearInterval(tickIntervalRef.current);
+            }
+        };
+    }, []);
+
+    console.debug('Clock render');
+    return (
+        <div id="clock">
+            <div id="a">
+                <div id="b">
+                    {state.withMin && <MinutesHand time={state.time.value}/>}
+                    <SecondsHand time={state.time.value} animated={state.active}/>
                 </div>
             </div>
-        );
-    }
+        </div>
+    );
 }
