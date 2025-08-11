@@ -41,13 +41,18 @@
     "start": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
     "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
     "build:analyze": "npm run build && npx serve -s build",
+    "build:stats": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
+    "build:size": "npm run build && npx bundlesize",
     "test": "react-scripts test",
     "test:coverage": "react-scripts test --coverage --watchAll=false",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
-    "format:check": "prettier --check src/**/*.{js,jsx,ts,tsx,json,css,md}"
+    "format:check": "prettier --check src/**/*.{js,jsx,ts,tsx,json,css,md}",
+    "perf:audit": "lighthouse http://localhost:3000 --output=html --output-path=./performance-report.html",
+    "perf:profile": "npm run build && npx serve -s build & sleep 5 && npx lighthouse http://localhost:3000",
+    "optimize:images": "npx imagemin src/**/*.{jpg,jpeg,png,gif,svg} --out-dir=src/optimized-images"
   },
   "eslintConfig": {
     "extends": [

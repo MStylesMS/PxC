@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './Clock.css';
 import SecondsHand from './SecondsHand';
 import MinutesHand from './MinutesHand';
 
-export default function Clock({ active, time: propTime }) {
+const Clock = React.memo(({ active, time: propTime }) => {
   const [state, setState] = useState({
     active: active || false,
     time: propTime || { value: 0, updated: new Date().getTime() },
@@ -12,7 +12,8 @@ export default function Clock({ active, time: propTime }) {
 
   const tickIntervalRef = useRef(null);
 
-  const willTimeChange = (currentTime, currentActive) => {
+  // Memoize time change detection function
+  const willTimeChange = useCallback((currentTime, currentActive) => {
     if (typeof currentTime === 'undefined' || currentTime.updated <= state.time.updated) {
       return false;
     }
@@ -21,9 +22,10 @@ export default function Clock({ active, time: propTime }) {
       timeChange = Math.abs(currentTime.value - state.time.value) > 1;
     }
     return timeChange;
-  };
+  }, [state.time.updated]);
 
-  const tick = () => {
+  // Optimize tick function with useCallback
+  const tick = useCallback(() => {
     setState(prevState => {
       const nextTime = prevState.time.value - 1;
       if (nextTime < 0) {
@@ -32,7 +34,7 @@ export default function Clock({ active, time: propTime }) {
           clearInterval(tickIntervalRef.current);
           tickIntervalRef.current = null;
         }
-        return { ...prevState, active: false };
+        return { ...prevState, active: false, time: { ...prevState.time, value: 0 } };
       } else {
         return {
           ...prevState,
@@ -40,9 +42,10 @@ export default function Clock({ active, time: propTime }) {
         };
       }
     });
-  };
+  }, []);
 
-  const startTicking = () => {
+  // Optimize start/stop functions with useCallback
+  const startTicking = useCallback(() => {
     if (tickIntervalRef.current) {
       return false;
     } else if (state.time.value <= 0) {
@@ -52,17 +55,17 @@ export default function Clock({ active, time: propTime }) {
     tick();
     tickIntervalRef.current = setInterval(() => tick(), 1000);
     setState(prevState => ({ ...prevState, active: true }));
-  };
+  }, [state.time.value, tick]);
 
-  const stopTicking = () => {
+  const stopTicking = useCallback(() => {
     if (tickIntervalRef.current) {
       clearInterval(tickIntervalRef.current);
       tickIntervalRef.current = null;
     }
     setState(prevState => ({ ...prevState, active: false }));
-  };
+  }, []);
 
-  // Handle prop changes
+  // Handle prop changes with dependency optimization
   useEffect(() => {
     if (typeof active !== 'undefined' && state.active !== active) {
       if (active) {
@@ -71,7 +74,7 @@ export default function Clock({ active, time: propTime }) {
         stopTicking();
       }
     }
-  }, [active]);
+  }, [active, state.active, startTicking, stopTicking]);
 
   useEffect(() => {
     if (willTimeChange(propTime, state.active)) {
@@ -81,7 +84,7 @@ export default function Clock({ active, time: propTime }) {
         withMin: propTime.value >= 60,
       }));
     }
-  }, [propTime]);
+  }, [propTime, state.active, willTimeChange]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -92,15 +95,26 @@ export default function Clock({ active, time: propTime }) {
     };
   }, []);
 
-  console.debug('Clock render');
+  // Memoize className to prevent unnecessary re-renders
+  const clockClassName = useMemo(() => state.active ? 'active' : 'inactive', [state.active]);
+
+  // Remove debug console.log in production
+  if (process.env.NODE_ENV === 'development') {
+    console.debug('Clock render');
+  }
+
   return (
-    <div id="clock" data-testid="clock" className={state.active ? 'active' : 'inactive'}>
+    <div id="clock" data-testid="clock" className={clockClassName}>
       <div id="a">
         <div id="b">
-          {state.withMin && <MinutesHand time={state.time.value} data-testid="minutes-hand" />}
-          <SecondsHand time={state.time.value} animated={state.active} data-testid="seconds-hand" />
+          {state.withMin && <MinutesHand time={state.time.value} />}
+          <SecondsHand time={state.time.value} animated={state.active} />
         </div>
       </div>
     </div>
   );
-}
+});
+
+Clock.displayName = 'Clock';
+
+export default Clock;
