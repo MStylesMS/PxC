@@ -1,0 +1,13 @@
+{
+  "status": "healthy",
+  "service": "houdini-clock",
+  "version": "1.0.1",
+  "timestamp": "2025-01-01T00:00:00Z",
+  "environment": "production",
+  "uptime": "calculating...",
+  "checks": {
+    "application": "ok",
+    "mqtt": "checking...",
+    "memory": "ok"
+  }
+}
