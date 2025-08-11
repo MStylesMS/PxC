@@ -3,19 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "cross-env": "^5.2.0",
-    "fbemitter": "^2.1.1",
-    "paho-mqtt": "https://github.com/AngelKyriako/paho.mqtt.javascript.git#master",
-    "react": "^16.4.1",
-    "react-dom": "^16.4.1",
-    "react-scripts": "1.1.4",
-    "react-transition-group": "1.x",
-    "rxjs": "^6.2.1"
+    "cross-env": "^7.0.3",
+    "fbemitter": "^3.0.0",
+    "paho-mqtt": "^1.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1",
+    "react-transition-group": "^4.4.5",
+    "rxjs": "^7.8.1"
   },
   "scripts": {
     "start": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
     "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
-    "test": "react-scripts test --env=jsdom",
+    "test": "react-scripts test",
     "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
