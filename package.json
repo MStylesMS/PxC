@@ -1,6 +1,6 @@
 {
   "name": "houdini-clock",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "React-based countdown clock interface for Houdini escape room with MQTT control",
   "private": true,
   "keywords": [

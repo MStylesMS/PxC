@@ -1,0 +1,3 @@
+# Refactoring Background (Archived)
+
+...original content archived from docs/refactor-background.md...

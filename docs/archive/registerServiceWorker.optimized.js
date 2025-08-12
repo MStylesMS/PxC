@@ -1,4 +1,5 @@
-// Enhanced Service Worker Registration with Performance Optimizations
+// Archived: Enhanced Service Worker Registration with Performance Optimizations
+// (moved from src/registerServiceWorker.optimized.js)
 
 const isLocalhost = Boolean(
   window.location.hostname === 'localhost' ||

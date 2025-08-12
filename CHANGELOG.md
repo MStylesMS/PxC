@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - CI/CD pipeline implementation
+## [1.1.0] - 2025-08-12
+
+### Changed
+- Consolidated documentation: kept canonical `DEPLOYMENT.md` at repo root; removed duplicate `docs/DEPLOYMENT.md`.
+- Updated README with links to MQTT commands and deployment guide; pruned outdated references.
+
+### Added
+- Created `docs/archive/` and moved historical PR/ISSUE writeups, refactor plans, and session reports there to declutter the docs root.
+- Archived `src/registerServiceWorker.optimized.js` to `docs/archive/registerServiceWorker.optimized.js` for reference.
+
+### Removed
+- Deleted unused/obsolete files: `public/rotation-worker.js`, `src/App.clean.js`, `src/SimpleTest.js`, and ad-hoc test runners `test-runtime.js`, `test-runtime-live.js`, `test-functionality.js`.
+
+### Notes
+- No runtime code changes; app behavior unchanged.
+
 - Performance optimization and bundle analysis
 - Additional test coverage improvements
 - Docker containerization

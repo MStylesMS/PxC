@@ -213,12 +213,14 @@ src/
 
 ## 📚 Documentation
 
-Additional documentation can be found in the `docs/` directory:
+Key docs:
 
-- [MQTT Messages Specification](docs/Houdini%20MQTT%20Messages%20Clock.pdf)
-- [Web Control Interface](docs/Houdini%20Web%20Control.pdf)
-- [Clock Face Design](docs/Countdown_Clock%20Face.png)
-- [Setup Commands](docs/commands.txt)
+- Deployment guide: `DEPLOYMENT.md` (canonical)
+- MQTT Commands: `docs/MQTT-COMMANDS.md`
+- Web control reference: `docs/Houdini Web Control.pdf`
+- Clock assets: `docs/Countdown_Clock Face.png`
+
+Historical plans and prior PR/Issue notes were moved to `docs/archive/` to declutter.
 
 ## 🔧 Troubleshooting
 

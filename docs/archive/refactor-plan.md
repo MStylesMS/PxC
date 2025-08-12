@@ -1,0 +1,3 @@
+# Houdini Clock Refactoring Master Plan (Archived)
+
+...original content archived from docs/refactor-plan.md...
