@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - CI/CD pipeline implementation
-## [1.1.0] - 2025-08-12
+## [1.1.0] - 2025-08-11
 
 ### Changed
 - Consolidated documentation: kept canonical `DEPLOYMENT.md` at repo root; removed duplicate `docs/DEPLOYMENT.md`.

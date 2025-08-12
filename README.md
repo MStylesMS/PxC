@@ -276,7 +276,7 @@ For technical support or questions:
 
 ---
 
-**Version**: 1.0.1+ (Modernized)  
-**Last Updated**: 2025  
+**Version**: 1.1.0  
+**Last Updated**: 2025-08-11  
 **Node.js Compatibility**: 16+  
 **React Version**: 18.3.1
