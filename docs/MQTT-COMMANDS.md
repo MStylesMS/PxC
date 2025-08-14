@@ -3,17 +3,41 @@
 ## Overview
 This document provides a complete reference for all MQTT commands supported by the Houdini escape room clock application. These commands allow real-time control of the clock display, timing, and hint system.
 
-**Note**: This documentation reflects the **corrected command formats** as specified in ISSUE-8. Current implementation may still use legacy formats until PR-8 is completed.
-
 ## Connection Details
 
-
 ### MQTT Configuration
-- **Topic**: `paradox/houdini/mirror/clock/commands` *(corrected format, use after migration)*
-- **Legacy Topic**: `Paradox/Houdini/Mirror/Clock/Commands` *(current implementation, use now)*
+- **Base Topic**: `paradox/houdini/clock`
+- **Commands Topic**: `paradox/houdini/clock/commands` (receives commands)
+- **State Topic**: `paradox/houdini/clock/state` (publishes heartbeat/status)
+- **Events Topic**: `paradox/houdini/clock/events` (publishes command acknowledgments)
+- **Warnings Topic**: `paradox/houdini/clock/warnings` (publishes error/warning messages)
 - **Protocol**: WebSocket MQTT (for browser compatibility)
 - **Default Ports**: 1883 (standard MQTT, CLI/tools), 1884 (WebSocket, browser)
 - **Message Format**: JSON
+
+#### Configuration File
+The clock reads its configuration from `config/clock.ini`:
+```ini
+[mqtt]
+host = localhost
+port = 1884
+topic = paradox/houdini/clock
+reconnect_interval = 5000
+keep_alive = 60
+
+[display]
+fade_duration_default = 2000
+hint_duration_default = 25
+clock_orientation = -90
+
+# Second hand tick animation style
+# alternate (default): alternate between two irregular ticks
+# tick1 or tick2: fixed tick pattern
+# off: disable tick keyframe motion (still counts visually)
+seconds_tick_style = alternate
+
+enable_console_logging = true
+```
 
 #### Mosquitto Example Config
 ```conf
@@ -29,21 +53,52 @@ Restart Mosquitto after editing:
 sudo systemctl restart mosquitto
 ```
 
+## MQTT Topics
 
-### Environment Configuration
-The MQTT broker connection will be migrated to `.ini` files (see planned PR/ISSUE-9). For now, configure via environment variables or package.json scripts.
+### Commands (Input) - `paradox/houdini/clock/commands`
+The clock subscribes to this topic to receive control commands.
+
+### State (Output) - `paradox/houdini/clock/state`
+The clock publishes heartbeat messages to this topic every 15 seconds:
+```
+active
+```
+
+### Events (Output) - `paradox/houdini/clock/events`
+The clock publishes acknowledgment events when commands are received:
+```json
+{
+  "event": "command_received",
+  "t": 1692012345678,
+  "message": {"command": "start", "time": "02:00"}
+}
+```
+
+### Warnings (Output) - `paradox/houdini/clock/warnings`
+The clock publishes warning messages for errors or invalid commands:
+```json
+{
+  "warning": "Invalid JSON received",
+  "t": 1692012345678,
+  "details": {"payload": "invalid json", "error": "Unexpected token"}
+}
+```
 
 ## Command Categories
 
 ## 1. Clock Control Commands
 
-### Start Countdown
+### Start/Resume Countdown
 Begins or resumes the countdown timer.
 ```json
 {"command": "start"}
 ```
+or
+```json
+{"command": "resume"}
+```
 **Effect**: Clock starts counting down from current time
-**Use Case**: Begin escape room challenge timer
+**Use Case**: Begin or resume the escape room challenge timer
 
 ### Pause Countdown  
 Stops the countdown timer without changing the display.
@@ -150,6 +205,12 @@ Shows a text hint overlay on the clock display.
 {"time": "60:00"}
 {"command": "fadeIn", "duration": 2000}
 {"command": "start"}
+```
+
+or
+
+```json
+{"command": "resume"}
 ```
 
 ### Mid-Game Hint
@@ -259,6 +320,16 @@ mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeout"}'
 - Have backup commands ready for network issues
 - Test all commands before live game sessions
 - Keep command history for troubleshooting
+
+### Error Handling
+The clock application now includes robust error handling:
+- **Invalid JSON**: Malformed JSON messages are logged to the warnings topic
+- **Unknown Commands**: Unrecognized commands trigger warning messages
+- **Invalid Time Formats**: Time parsing errors are captured and reported
+- **Connection Issues**: Automatic reconnection with exponential backoff
+- **Graceful Degradation**: Application continues running even with MQTT errors
+
+All errors and warnings are published to `paradox/houdini/clock/warnings` for monitoring.
 
 ## Troubleshooting
 

@@ -53,7 +53,7 @@ class App extends Component {
 
 **MQTT Commands Handled**:
 - `time <seconds>` → Updates countdown time
-- `start` → Activates countdown timer
+- `start` / `resume` → Activates or resumes countdown timer
 - `pause` → Pauses countdown timer
 - `hint <message>` → Displays hint overlay
 - `fadein` / `fadeout` → Controls opacity

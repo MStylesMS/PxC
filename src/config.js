@@ -11,7 +11,7 @@ const defaults = {
   mqtt: {
     host: (typeof window !== 'undefined' && window.location && window.location.hostname) || process.env.REACT_APP_MQTT_HOST || 'localhost',
     port: Number(process.env.REACT_APP_MQTT_PORT) || 1884,
-    topic: 'Paradox/Houdini/Mirror/Clock/Commands',
+    topic: 'paradox/houdini/clock',
     reconnect_interval: 5000,
     keep_alive: 60,
   },
@@ -19,6 +19,7 @@ const defaults = {
     fade_duration_default: 2000,
     hint_duration_default: 25,
     clock_orientation: -90,
+  seconds_tick_style: 'alternate', // 'alternate' | 'tick1' | 'tick2' | 'off'
   },
   enable_console_logging: env === 'development',
 };
@@ -41,7 +42,7 @@ if (typeof window === 'undefined') {
   const fs = eval('require')(/* webpackIgnore: true */ 'fs');
   // eslint-disable-next-line no-eval
   const ini = eval('require')(/* webpackIgnore: true */ 'ini');
-    const configPath = `config/${env}.ini`;
+    const configPath = `config/clock.ini`;
     const iniContent = fs.readFileSync(configPath, 'utf-8');
     const parsed = ini.parse(iniContent);
     config = {

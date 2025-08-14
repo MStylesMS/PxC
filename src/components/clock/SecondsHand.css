@@ -18,7 +18,7 @@
   border-radius: 100%;
 }
 
-.ss {
+.ss .s {
   animation-duration: 1000ms;
   animation-timing-function: steps(25, start);
   animation-delay: initial;
@@ -28,10 +28,29 @@
   animation-play-state: initial;
 }
 
-.ss.tick-animation-0 {
+.ss.tick-animation-0 .s {
   animation-name: tick1;
 }
 
-.ss.tick-animation-1 {
+.ss.tick-animation-1 .s {
   animation-name: tick2;
+}
+
+/* Irregular tick motion to mimic analog second hand */
+@keyframes tick1 {
+  0% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(var(--angle)) translate(0px, calc(-85vh / 3 / 2)); }
+  10% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 0.9deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  30% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 4deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  60% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 5.8deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  80% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 5.95deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  100% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 6deg)) translate(0px, calc(-85vh / 3 / 2)); }
+}
+
+@keyframes tick2 {
+  0% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(var(--angle)) translate(0px, calc(-85vh / 3 / 2)); }
+  15% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 1.3deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  35% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 3.2deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  55% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 5.2deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  85% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 5.95deg)) translate(0px, calc(-85vh / 3 / 2)); }
+  100% { transform: translate(0px, calc(85vh / 3 / 2)) rotate(calc(var(--angle) - 6deg)) translate(0px, calc(-85vh / 3 / 2)); }
 }

@@ -14,7 +14,7 @@ These commands control the countdown clock display application in this repositor
 | Command Type | JSON Format | Description |
 |--------------|-------------|-------------|
 | **Set Time** | `{"time": "MM:SS"}` | Sets the clock to the designated time (MM:SS format) |
-| **Start Countdown** | `{"command": "start"}` | Starts the clock counting down |
+| **Start/Resume Countdown** | `{"command": "start"}` or `{"command": "resume"}` | Starts or resumes the clock counting down |
 | **Pause Countdown** | `{"command": "pause"}` | Pauses the clock countdown |
 | **Fade Out** | `{"command": "fadeOut", "duration": 2000}` | Transition to black screen over specified milliseconds. Clock continues tracking time while hidden |
 | **Fade In** | `{"command": "fadeIn", "duration": 2000}` | Transition from black to show clock over specified milliseconds |

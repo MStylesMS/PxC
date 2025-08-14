@@ -1,6 +1,6 @@
 
 import { BehaviorSubject, Subject, timer } from 'rxjs';
-import { filter, map, switchMap, retry, takeUntil, catchError } from 'rxjs/operators';
+import { filter, map, switchMap, retry, takeUntil, catchError, finalize } from 'rxjs/operators';
 import { Client } from 'paho-mqtt';
 import { EventEmitter } from 'fbemitter';
 import config from './config';
@@ -118,8 +118,9 @@ connectClient();
 // Optimized MQTT service
 const MQTTService = {
   subscribe: function (topic) {
-    // Use topic from config if not provided
-    const subTopic = topic || (config.mqtt && config.mqtt.topic) || 'Paradox/Houdini/Mirror/Clock/Commands';
+    // Use base topic from config and append /commands
+    const baseTopic = topic || (config.mqtt && config.mqtt.topic) || 'paradox/houdini/clock';
+    const subTopic = `${baseTopic}/commands`;
     return connect$.pipe(
       filter(connected => connected),
       switchMap(() => {
@@ -137,11 +138,22 @@ const MQTTService = {
           subscribeEmitter.addListener(subTopic, listener);
           // Return observable that handles cleanup
           return topicSubscribe$.pipe(
+            // response is already the payloadString from onMessageArrived
+            map(response => response),
             takeUntil(connect$.pipe(filter(connected => !connected))),
+            finalize(() => {
+              try {
+                subscribeEmitter.removeListener(subTopic, listener);
+              } catch (e) {
+                // eslint-disable-next-line no-console
+                console.error('Error removing MQTT listener:', e);
+              }
+            }),
             catchError(error => {
         // eslint-disable-next-line no-console
         console.error('MQTT subscription error:', error);
-              return timer(1000).pipe(switchMap(() => this.subscribe(subTopic)));
+              // Re-subscribe to base topic (avoid duplicating /commands)
+              return timer(1000).pipe(switchMap(() => this.subscribe(baseTopic)));
             })
           );
         } catch (error) {
@@ -155,8 +167,9 @@ const MQTTService = {
   },
 
   publish: function (topic, payload, retained = false) {
-    // Use topic from config if not provided
-    const pubTopic = topic || (config.mqtt && config.mqtt.topic) || 'Paradox/Houdini/Mirror/Clock/Commands';
+    // Use base topic from config and append /commands if no specific topic provided
+    const baseTopic = (config.mqtt && config.mqtt.topic) || 'paradox/houdini/clock';
+    const pubTopic = topic || `${baseTopic}/commands`;
     return connect$.pipe(
       filter(connected => connected),
       map(() => {
@@ -182,6 +195,37 @@ const MQTTService = {
         throw error;
       })
     );
+  },
+
+  // Publish state/heartbeat messages
+  publishState: function(status = 'active') {
+    const baseTopic = (config.mqtt && config.mqtt.topic) || 'paradox/houdini/clock';
+    const stateTopic = `${baseTopic}/state`;
+    return this.publish(stateTopic, status);
+  },
+
+  // Publish events
+  publishEvent: function(event, message = {}) {
+    const baseTopic = (config.mqtt && config.mqtt.topic) || 'paradox/houdini/clock';
+    const eventTopic = `${baseTopic}/events`;
+    const eventPayload = JSON.stringify({
+      event,
+      t: Date.now(),
+      message
+    });
+    return this.publish(eventTopic, eventPayload);
+  },
+
+  // Publish warnings
+  publishWarning: function(warning, details = {}) {
+    const baseTopic = (config.mqtt && config.mqtt.topic) || 'paradox/houdini/clock';
+    const warningTopic = `${baseTopic}/warnings`;
+    const warningPayload = JSON.stringify({
+      warning,
+      t: Date.now(),
+      details
+    });
+    return this.publish(warningTopic, warningPayload);
   },
 
   // New method to check connection status

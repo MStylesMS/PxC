@@ -104,31 +104,37 @@ REACT_APP_MQTT_PORT=1884
 
 ## 📡 MQTT Commands
 
-The clock listens to the topic `Paradox/Houdini/Mirror/Clock/Commands` (legacy, current) or `paradox/houdini/mirror/clock/commands` (future, see docs/MQTT-COMMANDS.md) and responds to these commands:
+The clock listens on the base topic `paradox/houdini/clock`:
 
-### Time Control
-- `time <seconds>` - Set countdown time in seconds
-- `start` - Start the countdown timer
-- `pause` - Pause the countdown timer
+- Commands: `paradox/houdini/clock/commands`
+- State: `paradox/houdini/clock/state`
+- Events: `paradox/houdini/clock/events`
+- Warnings: `paradox/houdini/clock/warnings`
 
-### Visual Effects
-- `fadein` - Fade in the clock display
-- `fadeout` - Fade out the clock display
+### Time & Control (JSON)
+- Set time: `{ "time": "MM:SS" }`
+- Start/Resume: `{ "command": "start" }` or `{ "command": "resume" }`
+- Pause: `{ "command": "pause" }`
 
-### Hints System
-- `hint <message>` - Display a hint message overlay
+### Visual Effects (JSON)
+- Fade in: `{ "command": "fadeIn", "duration": 1000 }`
+- Fade out: `{ "command": "fadeOut", "duration": 1000 }`
 
-### Example Commands
+### Hints (JSON)
+- Show hint: `{ "hint": "Your hint here", "duration": 10 }`
+
+### Legacy Text Commands (deprecated)
+- `time <seconds>`, `start`, `pause`, `fadein`, `fadeout`, `hint <message>`
+
+### Examples
 ```
-time 300        # Set 5-minute countdown
-start           # Begin countdown
-hint Welcome!   # Show welcome message
-pause           # Pause the timer
-fadeout         # Fade out display
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"time":"10:00"}'
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"start"}'
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"resume"}'
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"pause"}'
 ```
 
-
-For detailed MQTT message specifications and migration plans, see [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md).
+For detailed specifications, see [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md).
 
 
 ## 🛠️ Development
@@ -154,9 +160,9 @@ npm run format:check   # Check code formatting
 
 ### MQTT & App Settings (.ini-based)
 
-All configuration is now managed via `.ini` files in the `config/` directory. The default is `config/development.ini`.
+All configuration is now managed via `.ini` files in the `config/` directory. The default is `config/clock.ini`.
 
-**Example: `config/development.ini`**
+**Example: `config/clock.ini`**
 
 ```ini
 [mqtt]
@@ -170,6 +176,7 @@ keep_alive = 60
 fade_duration_default = 2000
 hint_duration_default = 25
 clock_orientation = -90
+seconds_tick_style = alternate  ; options: alternate | tick1 | tick2 | off
 
 
 ```

@@ -25,6 +25,7 @@ sleep 1
 publish '{"time":"02:00"}'
 sleep 0.5
 publish '{"command":"start"}'
+publish '{"command":"resume"}'
 sleep 3
 publish '{"hint":"Find the hidden key!","duration":5}'
 sleep 6

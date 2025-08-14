@@ -17,11 +17,15 @@ class App extends Component {
       shown: false,
       fadeDuration: 2000,
     };
+    this.heartbeatInterval = null;
   }
 
   componentDidMount() {
+    // Start heartbeat
+    this.startHeartbeat();
+
     const stream = MQTT && typeof MQTT.subscribe === 'function'
-      ? MQTT.subscribe('Paradox/Houdini/Mirror/Clock/Commands')
+      ? MQTT.subscribe()
       : null;
 
     if (!stream || typeof stream.pipe !== 'function') {
@@ -39,7 +43,11 @@ class App extends Component {
             if (typeof payload === 'string') return JSON.parse(payload);
             return null;
           } catch (e) {
-            // Swallow JSON parse errors
+            // Publish warning for malformed JSON
+            MQTT.publishWarning('Invalid JSON received', { 
+              payload: typeof payload === 'string' ? payload : String(payload),
+              error: e.message 
+            });
             return null;
           }
         }),
@@ -47,13 +55,30 @@ class App extends Component {
       )
       .subscribe(commandObject => {
         try {
+          // Publish event for received command
+          MQTT.publishEvent('command_received', commandObject).subscribe({
+            error: (err) => console.error('Failed to publish event:', err)
+          });
+
           if (commandObject && commandObject.time) {
             let time = this.state.time;
             try {
               time = commandObject.time.split(':').map(t => Number(t));
               time = time[0] * 60 + time[1];
-              if (isNaN(time)) time = this.state.time;
-    } catch (e) {}
+              if (isNaN(time)) {
+                MQTT.publishWarning('Invalid time format', { received: commandObject.time }).subscribe({
+                  error: (err) => console.error('Failed to publish warning:', err)
+                });
+                time = this.state.time;
+              }
+    } catch (e) {
+              MQTT.publishWarning('Time parsing error', { 
+                received: commandObject.time, 
+                error: e.message 
+              }).subscribe({
+                error: (err) => console.error('Failed to publish warning:', err)
+              });
+            }
             this.setState({
               time: {
                 value: time,
@@ -68,27 +93,86 @@ class App extends Component {
           } else if (commandObject && commandObject.command) {
             switch (commandObject.command) {
               case 'start':
+              case 'resume':
                 this.setState({ active: true, shown: true });
                 break;
               case 'pause':
                 this.setState({ active: false, fadeDuration: commandObject.duration || 2000 });
                 break;
               case 'fadeout':
+              case 'fadeOut':
                 this.setState({ shown: false, fadeDuration: commandObject.duration || 2000 });
                 break;
               case 'fadein':
+              case 'fadeIn':
                 this.setState({ shown: true, fadeDuration: commandObject.duration || 2000 });
                 break;
               default:
-        // eslint-disable-next-line no-console
-        console.warn(`Unexpected command object: ${JSON.stringify(commandObject)}`);
+                const warningMsg = `Unknown command: ${commandObject.command}`;
+                // eslint-disable-next-line no-console
+                console.warn(warningMsg);
+                MQTT.publishWarning(warningMsg, commandObject).subscribe({
+                  error: (err) => console.error('Failed to publish warning:', err)
+                });
             }
+          } else {
+            const warningMsg = 'Unrecognized command format';
+            // eslint-disable-next-line no-console
+            console.warn(warningMsg, commandObject);
+            MQTT.publishWarning(warningMsg, commandObject).subscribe({
+              error: (err) => console.error('Failed to publish warning:', err)
+            });
           }
         } catch (e) {
-      // eslint-disable-next-line no-console
-      console.log(e);
+          const errorMsg = 'Error processing command';
+          // eslint-disable-next-line no-console
+          console.error(errorMsg, e);
+          MQTT.publishWarning(errorMsg, { 
+            command: commandObject, 
+            error: e.message 
+          }).subscribe({
+            error: (err) => console.error('Failed to publish warning:', err)
+          });
         }
       });
+  }
+
+  componentWillUnmount() {
+    this.stopHeartbeat();
+    if (MQTT && typeof MQTT.disconnect === 'function') {
+      MQTT.disconnect();
+    }
+  }
+
+  startHeartbeat() {
+    // Send heartbeat every 15 seconds
+    this.heartbeatInterval = setInterval(() => {
+      if (MQTT && typeof MQTT.publishState === 'function') {
+        MQTT.publishState('active').subscribe({
+          error: (err) => {
+            // eslint-disable-next-line no-console
+            console.error('Failed to send heartbeat:', err);
+          }
+        });
+      }
+    }, 15000);
+
+    // Send initial heartbeat
+    if (MQTT && typeof MQTT.publishState === 'function') {
+      MQTT.publishState('active').subscribe({
+        error: (err) => {
+          // eslint-disable-next-line no-console
+          console.error('Failed to send initial heartbeat:', err);
+        }
+      });
+    }
+  }
+
+  stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 
   render() {

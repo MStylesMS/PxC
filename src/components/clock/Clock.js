@@ -15,6 +15,8 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
   });
 
   const tickIntervalRef = useRef(null);
+  const adjustingRef = useRef(false);
+  const [adjusting, setAdjusting] = useState(false);
 
   // Memoize time change detection function
   const willTimeChange = useCallback((currentTime, currentActive) => {
@@ -90,11 +92,20 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
 
   useEffect(() => {
     if (willTimeChange(propTime, state.active)) {
+      // Engage adjusting mode briefly to smoothly spin to new time
+      adjustingRef.current = true;
+      setAdjusting(true);
       setState(prevState => ({
         ...prevState,
         time: propTime,
         withMin: propTime.value >= 60,
       }));
+      // Disable adjusting after the transition window
+  const t = setTimeout(() => {
+        adjustingRef.current = false;
+        setAdjusting(false);
+  }, 850);
+      return () => clearTimeout(t);
     }
   }, [propTime, state.active, willTimeChange]);
 
@@ -121,8 +132,8 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
     <div id="clock" data-testid="clock" className={clockClassName}>
       <div id="a">
         <div id="b">
-          {state.withMin && <MinutesHand time={state.time.value} />}
-          <SecondsHand time={state.time.value} animated={state.active} />
+          {state.withMin && <MinutesHand time={state.time.value} adjusting={adjusting} />}
+          <SecondsHand time={state.time.value} animated={state.active} adjusting={adjusting} />
         </div>
       </div>
     </div>

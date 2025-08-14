@@ -196,7 +196,7 @@ hint Only 10 minutes remaining!
 pause
 
 # 7. Resume - Continue after issue resolved
-start
+start  # or 'resume'
 
 # 8. Dramatic effect - Fade for special moments
 fadeout
