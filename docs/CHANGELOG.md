@@ -27,7 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Performance optimization and bundle analysis
 - Additional test coverage improvements
-- Docker containerization
+
+## [1.1.1] - 2025-08-14
+
+### Removed
+- Docker support and documentation references.
 
 ## [1.0.1] - 2025-01-XX
 

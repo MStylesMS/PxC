@@ -40,3 +40,7 @@ Thumbs.db
 # Modern tooling
 .eslintcache
 .parcel-cache
+# Local runtime logs
+dev-server.log
+server.log
+startup.log
