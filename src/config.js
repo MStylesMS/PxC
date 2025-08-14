@@ -25,11 +25,22 @@ const defaults = {
 };
 
 let config = defaults;
+let runtimeConfig = null;
+try {
+  // Will be present after prebuild step generates it
+  // eslint-disable-next-line global-require, import/no-unresolved
+  runtimeConfig = require('./runtime-config.json');
+} catch (_) {
+  runtimeConfig = null;
+}
 
 // 1) Window-injected runtime config (if present)
 try {
   if (typeof window !== 'undefined' && window.__APP_CONFIG__) {
     config = { ...defaults, ...window.__APP_CONFIG__, mqtt: { ...defaults.mqtt, ...(window.__APP_CONFIG__.mqtt || {}) }, display: { ...defaults.display, ...(window.__APP_CONFIG__.display || {}) } };
+  } else if (runtimeConfig) {
+    // Build-time baked config from clock.ini
+    config = { ...defaults, ...runtimeConfig, mqtt: { ...defaults.mqtt, ...(runtimeConfig.mqtt || {}) }, display: { ...defaults.display, ...(runtimeConfig.display || {}) } };
   }
 } catch (_) {
   // ignore
@@ -73,3 +84,13 @@ if (typeof window === 'undefined') {
 }
 
 export default config;
+
+// Optional one-time debug of effective config
+try {
+  if (config && config.enable_console_logging) {
+    // eslint-disable-next-line no-console
+    console.debug('[PXC] Effective config:', config);
+  }
+} catch (_) {
+  // ignore
+}

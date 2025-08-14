@@ -39,8 +39,9 @@
     "prettier": "^3.3.3"
   },
   "scripts": {
-    "start": "cross-env PUBLIC_URL=/ REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
-    "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
+  "prebuild": "node scripts/generate-runtime-config.js",
+  "start": "cross-env PUBLIC_URL=/ REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
+  "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
     "build:analyze": "npm run build && npx serve -s build",
     "build:stats": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
     "build:size": "npm run build && npx bundlesize",

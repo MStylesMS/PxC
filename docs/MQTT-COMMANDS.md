@@ -15,8 +15,13 @@ This document provides a complete reference for all MQTT commands supported by t
 - **Default Ports**: 1883 (standard MQTT, CLI/tools), 1884 (WebSocket, browser)
 - **Message Format**: JSON
 
-#### Configuration File
-The clock reads its configuration from `config/clock.ini`:
+#### Configuration File (Build-time)
+The clock reads its configuration from `config/clock.ini` at build-time. After editing, run `npm run build` for changes to take effect in the optimized page.
+Key fields:
+- [mqtt] host, port, topic, reconnect_interval, keep_alive
+- [display] fade_duration_default, hint_duration_default, clock_orientation, seconds_tick_style
+
+Example `config/clock.ini`:
 ```ini
 [mqtt]
 host = localhost

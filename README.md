@@ -160,7 +160,8 @@ npm run format:check   # Check code formatting
 
 ### MQTT & App Settings (.ini-based)
 
-All configuration is now managed via `.ini` files in the `config/` directory. The default is `config/clock.ini`.
+All configuration is managed via `config/clock.ini` and is baked into the optimized build during `npm run build`.
+Note: Changing `clock.ini` requires rebuilding to take effect.
 
 **Example: `config/clock.ini`**
 
@@ -189,7 +190,7 @@ seconds_tick_style = alternate  ; options: alternate | tick1 | tick2 | off
 1. Copy `config/development.ini` to `config/production.ini` (or any name matching your `NODE_ENV`).
 2. Edit as needed for your environment.
 
-The app will auto-load the `.ini` file matching `NODE_ENV` (default: `development`).
+Build-time processing: A prebuild step (`scripts/generate-runtime-config.js`) reads `config/clock.ini` and emits `src/runtime-config.json`, which is bundled and used by the optimized page. No runtime fetch is required.
 ## 🏗️ Architecture
 
 ### Component Structure
