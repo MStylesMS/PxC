@@ -177,10 +177,11 @@ const MQTTService = {
           if (!client) {
             throw new Error('MQTT client not initialized');
           }
-          client.publish(pubTopic, payload, 2, retained);
+          const data = (typeof payload === 'string') ? payload : JSON.stringify(payload);
+          client.publish(pubTopic, data, 2, retained);
           if (process.env.NODE_ENV === 'development' || config.enable_console_logging) {
             // eslint-disable-next-line no-console
-            console.debug('MQTT Published:', { pubTopic, payload, retained });
+            console.debug('MQTT Published:', { pubTopic, payload: (typeof payload === 'string' ? payload : data), retained });
           }
           return true;
         } catch (error) {
@@ -197,11 +198,11 @@ const MQTTService = {
     );
   },
 
-  // Publish state/heartbeat messages
-  publishState: function(status = 'active') {
+  // Publish state/heartbeat messages as JSON
+  publishState: function(statePayload = { state: 'unknown', time: '00:00' }) {
     const baseTopic = (config.mqtt && config.mqtt.topic) || 'paradox/houdini/clock';
     const stateTopic = `${baseTopic}/state`;
-    return this.publish(stateTopic, status);
+    return this.publish(stateTopic, statePayload);
   },
 
   // Publish events

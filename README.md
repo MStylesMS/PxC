@@ -59,6 +59,23 @@ yarn build
 npm run build:analyze
 ```
 
+
+## 🖥️ Kiosk Mode
+
+For the best escape room experience, run Houdini Clock in Chromium's kiosk mode. This launches the browser in full-screen, borderless mode with no address bar or controls.
+
+**To launch Chromium in kiosk mode:**
+
+```bash
+chromium-browser --kiosk http://your-clock-url
+# or
+google-chrome --kiosk http://your-clock-url
+```
+
+For more information and advanced options, see the [Kiosk Mode section in the Deployment Guide](docs/DEPLOYMENT.md#kiosk-mode).
+
+If you cannot follow the link, see the deployment guide for more details on kiosk setup.
+
 ## ⚙️ Configuration
 
 

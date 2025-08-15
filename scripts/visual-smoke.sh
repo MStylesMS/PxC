@@ -9,7 +9,7 @@ set -euo pipefail
 HOST="${1:-localhost}"
 # mosquitto_pub defaults to TCP; most brokers use 1883 for TCP
 PORT="${2:-1883}"
-TOPIC="${3:-Paradox/Houdini/Mirror/Clock/Commands}"
+TOPIC="${3:-paradox/houdini/mirror/clock/commands}"
 
 publish() {
   local payload="$1"
@@ -20,17 +20,18 @@ publish() {
 # Sequence
 echo "Target -> host=$HOST port=$PORT topic=$TOPIC"
 
-publish '{"command":"fadein","duration":500}'
-sleep 1
+publish '{"command":"fadein","duration":5000}'
+sleep 8
 publish '{"time":"02:00"}'
-sleep 0.5
+sleep 2
 publish '{"command":"start"}'
+sleep 5
+publish '{"command":"pause"}'
+sleep 5
 publish '{"command":"resume"}'
 sleep 3
-publish '{"hint":"Find the hidden key!","duration":5}'
-sleep 6
-publish '{"command":"pause","duration":1000}'
-sleep 1.2
+publish '{"hint":"Find the hidden key!","duration":4}'
+sleep 8
 publish '{"command":"fadeout","duration":1000}'
 
 echo "✓ Visual smoke sequence sent. Observe the UI reactions."

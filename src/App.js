@@ -17,12 +17,14 @@ class App extends Component {
       shown: false,
       fadeDuration: 2000,
     };
-    this.heartbeatInterval = null;
+  this.heartbeatInterval = null;
+  this.statePublishInterval = null;
   }
 
   componentDidMount() {
-    // Start heartbeat
+    // Start heartbeat and state publisher
     this.startHeartbeat();
+    this.startStatePublisher();
 
     const stream = MQTT && typeof MQTT.subscribe === 'function'
       ? MQTT.subscribe()
@@ -35,7 +37,6 @@ class App extends Component {
 
     stream
       .pipe(
-        // Normalize payloads: accept already-parsed objects or JSON strings
         map(payload => {
           try {
             if (payload == null) return null;
@@ -43,47 +44,99 @@ class App extends Component {
             if (typeof payload === 'string') return JSON.parse(payload);
             return null;
           } catch (e) {
-            // Publish warning for malformed JSON
-            MQTT.publishWarning('Invalid JSON received', { 
+            // Always publish warning for malformed JSON
+            MQTT.publishWarning('Malformed JSON received', {
               payload: typeof payload === 'string' ? payload : String(payload),
-              error: e.message 
+              error: e.message
+            }).subscribe({
+              error: (err) => console.error('Failed to publish warning:', err)
             });
             return null;
           }
         }),
-        filter(cmd => !!cmd)
+        filter(cmd => {
+          if (!cmd) return false;
+          // If not an object or missing expected fields, warn
+          if (typeof cmd !== 'object' || (!cmd.command && !cmd.time && !cmd.hint)) {
+            MQTT.publishWarning('Unrecognized command format', { received: cmd }).subscribe({
+              error: (err) => console.error('Failed to publish warning:', err)
+            });
+            return false;
+          }
+          return true;
+        })
       )
       .subscribe(commandObject => {
         try {
-          // Publish event for received command
-          MQTT.publishEvent('command_received', commandObject).subscribe({
-            error: (err) => console.error('Failed to publish event:', err)
-          });
-
-          if (commandObject && commandObject.time) {
-            let time = this.state.time;
+          // Combined time+command handling
+          const hasTime = commandObject && commandObject.time;
+          const hasCommand = commandObject && commandObject.command;
+          if ((hasCommand && (commandObject.command === 'start' || commandObject.command === 'resume')) && hasTime) {
+            // Validate MM:SS
+            let mm = 0, ss = 0, valid = false;
             try {
-              time = commandObject.time.split(':').map(t => Number(t));
-              time = time[0] * 60 + time[1];
-              if (isNaN(time)) {
-                MQTT.publishWarning('Invalid time format', { received: commandObject.time }).subscribe({
-                  error: (err) => console.error('Failed to publish warning:', err)
-                });
-                time = this.state.time;
-              }
-    } catch (e) {
-              MQTT.publishWarning('Time parsing error', { 
-                received: commandObject.time, 
-                error: e.message 
-              }).subscribe({
+              const parts = commandObject.time.split(':');
+              mm = Number(parts[0]);
+              ss = Number(parts[1]);
+              valid = (
+                Number.isInteger(mm) && Number.isInteger(ss) &&
+                mm >= 0 && mm <= 60 && ss >= 0 && ss < 60 &&
+                (mm < 60 || (mm === 60 && ss === 0))
+              );
+            } catch (e) {
+              valid = false;
+            }
+            if (!valid) {
+              MQTT.publishWarning('Invalid time format (MM:SS must be 0-59, or 60:00 only)', { received: commandObject.time }).subscribe({
                 error: (err) => console.error('Failed to publish warning:', err)
               });
+              return;
             }
+            const time = mm * 60 + ss;
+            // Set time and start/resume in one atomic update
+            this.setState({
+              active: true,
+              shown: true,
+              time: { value: time, updated: Date.now() }
+            }, () => {
+              const payload = this.buildStatePayload();
+              MQTT.publishState(payload).subscribe({
+                error: (err) => console.error('Failed to publish state after start/resume+time:', err)
+              });
+            });
+          } else if (hasTime) {
+            // Validate MM:SS
+            let mm = 0, ss = 0, valid = false;
+            try {
+              const parts = commandObject.time.split(':');
+              mm = Number(parts[0]);
+              ss = Number(parts[1]);
+              valid = (
+                Number.isInteger(mm) && Number.isInteger(ss) &&
+                mm >= 0 && mm <= 60 && ss >= 0 && ss < 60 &&
+                (mm < 60 || (mm === 60 && ss === 0))
+              );
+            } catch (e) {
+              valid = false;
+            }
+            if (!valid) {
+              MQTT.publishWarning('Invalid time format (MM:SS must be 0-59, or 60:00 only)', { received: commandObject.time }).subscribe({
+                error: (err) => console.error('Failed to publish warning:', err)
+              });
+              return;
+            }
+            const time = mm * 60 + ss;
             this.setState({
               time: {
                 value: time,
                 updated: new Date().getTime(),
               },
+            }, () => {
+              // Publish state after time update
+              const payload = this.buildStatePayload();
+              MQTT.publishState(payload).subscribe({
+                error: (err) => console.error('Failed to publish state after time set:', err)
+              });
             });
           } else if (commandObject && commandObject.hint) {
             this.setState({
@@ -93,12 +146,28 @@ class App extends Component {
           } else if (commandObject && commandObject.command) {
             switch (commandObject.command) {
               case 'start':
-              case 'resume':
-                this.setState({ active: true, shown: true });
+              case 'resume': {
+                // Only run if not already handled above (no time field)
+                if (!hasTime) {
+                  this.setState({ active: true, shown: true }, () => {
+                    const payload = this.buildStatePayload();
+                    MQTT.publishState(payload).subscribe({
+                      error: (err) => console.error('Failed to publish state after resume/start:', err)
+                    });
+                  });
+                }
                 break;
-              case 'pause':
-                this.setState({ active: false, fadeDuration: commandObject.duration || 2000 });
+              }
+              case 'pause': {
+                // Only update time if a new time is being set (handled above)
+                this.setState({ active: false, fadeDuration: commandObject.duration || 2000 }, () => {
+                  const payload = this.buildStatePayload();
+                  MQTT.publishState(payload).subscribe({
+                    error: (err) => console.error('Failed to publish state after pause:', err)
+                  });
+                });
                 break;
+              }
               case 'fadeout':
               case 'fadeOut':
                 this.setState({ shown: false, fadeDuration: commandObject.duration || 2000 });
@@ -115,13 +184,6 @@ class App extends Component {
                   error: (err) => console.error('Failed to publish warning:', err)
                 });
             }
-          } else {
-            const warningMsg = 'Unrecognized command format';
-            // eslint-disable-next-line no-console
-            console.warn(warningMsg, commandObject);
-            MQTT.publishWarning(warningMsg, commandObject).subscribe({
-              error: (err) => console.error('Failed to publish warning:', err)
-            });
           }
         } catch (e) {
           const errorMsg = 'Error processing command';
@@ -139,39 +201,98 @@ class App extends Component {
 
   componentWillUnmount() {
     this.stopHeartbeat();
+    this.stopStatePublisher();
     if (MQTT && typeof MQTT.disconnect === 'function') {
       MQTT.disconnect();
     }
   }
 
   startHeartbeat() {
-    // Send heartbeat every 15 seconds
-    this.heartbeatInterval = setInterval(() => {
-      if (MQTT && typeof MQTT.publishState === 'function') {
-        MQTT.publishState('active').subscribe({
-          error: (err) => {
-            // eslint-disable-next-line no-console
-            console.error('Failed to send heartbeat:', err);
-          }
-        });
-      }
-    }, 15000);
-
-    // Send initial heartbeat
-    if (MQTT && typeof MQTT.publishState === 'function') {
-      MQTT.publishState('active').subscribe({
-        error: (err) => {
-          // eslint-disable-next-line no-console
-          console.error('Failed to send initial heartbeat:', err);
-        }
-      });
-    }
+    // Heartbeat removed; state topic now covers periodic status.
+    this.heartbeatInterval = null;
   }
 
   stopHeartbeat() {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
+    }
+  }
+
+  // Helper to format seconds -> MM:SS
+  formatMMSS(totalSeconds) {
+    const t = Math.max(0, Math.round(totalSeconds || 0));
+    const m = Math.floor(t / 60);
+    const s = t % 60;
+    const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+    return `${pad(m)}:${pad(s)}`;
+  }
+
+  // Compute current derived seconds remaining based on last update and active flag
+  getDerivedTimeValue() {
+    const base = this.state.time || { value: 0, updated: Date.now() };
+    const now = Date.now();
+    const elapsed = Math.max(0, Math.floor((now - (base.updated || now)) / 1000));
+    const value = this.state.active ? (base.value - elapsed) : base.value;
+    return Math.max(0, value);
+  }
+
+  // Try to detect kiosk mode (best effort)
+  detectKioskMode() {
+    try {
+      // Heuristic: no window chrome, full screen, or custom flag
+      if (window.navigator && window.navigator['kiosk']) return true;
+      if (window.matchMedia && window.matchMedia('(display-mode: kiosk)').matches) return true;
+      if (window.outerWidth && window.outerHeight && window.screen) {
+        // Allow a few pixels for borders
+        const dw = Math.abs(window.outerWidth - window.screen.width);
+        const dh = Math.abs(window.outerHeight - window.screen.height);
+        if (dw < 16 && dh < 80) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // Build current state payload
+  buildStatePayload() {
+    const stateStr = this.state.active ? 'running' : 'paused';
+    const timeStr = this.formatMMSS(this.getDerivedTimeValue());
+    let kiosk = false;
+    if (typeof window !== 'undefined') {
+      kiosk = this.detectKioskMode();
+    }
+    return { state: stateStr, time: timeStr, kiosk };
+  }
+
+  // Publish state every 10 seconds
+  startStatePublisher() {
+    if (this.statePublishInterval) return;
+    this.statePublishInterval = setInterval(() => {
+      try {
+        const payload = this.buildStatePayload();
+        if (MQTT && typeof MQTT.publishState === 'function') {
+          MQTT.publishState(payload).subscribe({
+            error: (err) => console.error('Failed to publish periodic state:', err)
+          });
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('State publisher error:', e);
+      }
+    }, 10000);
+    // Initial publish
+    try {
+      const payload = this.buildStatePayload();
+      MQTT.publishState(payload).subscribe({
+        error: (err) => console.error('Failed to publish initial state:', err)
+      });
+    } catch (_) {}
+  }
+
+  stopStatePublisher() {
+    if (this.statePublishInterval) {
+      clearInterval(this.statePublishInterval);
+      this.statePublishInterval = null;
     }
   }
 

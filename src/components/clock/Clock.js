@@ -36,10 +36,11 @@ const Clock = React.memo(({ active = false, time: propTime }) => {
       const nextTime = prevState.time.value - 1;
       if (nextTime < 0) {
         // Stop ticking
-        if (tickIntervalRef.current) {
+  if (tickIntervalRef.current) {
           clearInterval(tickIntervalRef.current);
           tickIntervalRef.current = null;
         }
+  // Note: App handles publishing overall state; Clock is presentation only.
         return { ...prevState, active: false, time: { ...prevState.time, value: 0 } };
       } else {
         return {

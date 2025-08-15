@@ -1,3 +1,56 @@
+# Kiosk Mode
+
+Running Houdini Clock in kiosk mode ensures the browser is borderless, full-screen, and tamper-resistant—ideal for escape room displays.
+
+## Launching Chromium in Kiosk Mode
+
+To start Chromium or Google Chrome in kiosk mode, use:
+
+```bash
+chromium-browser --kiosk http://your-clock-url
+# or
+google-chrome --kiosk http://your-clock-url
+```
+
+This will:
+- Remove all window borders, tabs, and address bar
+- Prevent users from closing or minimizing the window with the mouse
+- Start the browser directly on your clock interface
+
+### Additional Useful Flags
+
+- `--incognito` — Launches in private mode
+- `--noerrdialogs` — Suppresses error dialogs
+- `--disable-translate` — Disables translation prompts
+- `--disable-infobars` — Hides “Chrome is being controlled” bar
+- `--start-fullscreen` — Starts in fullscreen (not true kiosk; borders remain)
+
+Example with multiple flags:
+
+```bash
+chromium-browser --kiosk --incognito --noerrdialogs --disable-translate --disable-infobars http://your-clock-url
+```
+
+### Exiting Kiosk Mode
+
+- Press `Alt+F4` or `Ctrl+W` to close the window (keyboard required)
+- On some systems, you may need to switch to a different virtual terminal or use a remote admin tool
+
+### App Mode (Minimal Chrome)
+
+Alternatively, you can use app mode for a minimal window:
+
+```bash
+chromium-browser --app=http://your-clock-url
+```
+
+This removes most chrome but leaves a window border and close button.
+
+### Detection Caveats
+
+There is no standard way for a web page to reliably detect true kiosk mode. The app uses best-effort heuristics, but for critical use, set a custom flag (e.g., `navigator.kiosk = true`) via your launch script if possible.
+
+For more, see: [Chromium Kiosk Mode Documentation](https://www.chromium.org/developers/how-tos/kiosk-mode/)
 # Deployment Guide
 
 This guide covers deployment strategies and configurations for the Houdini Clock application.
