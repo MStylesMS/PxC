@@ -14,20 +14,15 @@ const Hint = React.memo(({ text, duration, mqtt }) => {
 
   // Optimize timer functions with useCallback
   const stopTimer = useCallback(() => {
-    console.log('stopTimer called, current timer ID:', timerRef.current);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
-      console.log('Timer cleared');
       timerRef.current = null;
     }
   }, []);
 
   const startTimer = useCallback((timerDuration) => {
-    console.log('startTimer called with:', timerDuration);
     if (!isNaN(timerDuration) && timerDuration > 0) {
-      console.log('Setting timeout for:', timerDuration, 'ms');
       timerRef.current = setTimeout(() => {
-        console.log('Timer fired! Hiding hint');
         // Publish hint expiration event before hiding
         if (mqtt && typeof mqtt.publishEvent === 'function') {
           mqtt.publishEvent('hint_expired', { text: text?.trim() }).subscribe({
@@ -37,9 +32,6 @@ const Hint = React.memo(({ text, duration, mqtt }) => {
         setState(prev => ({ ...prev, shown: false }));
         timerRef.current = null;
       }, timerDuration);
-      console.log('Timer ID:', timerRef.current);
-    } else {
-      console.log('Invalid timer duration:', timerDuration);
     }
   }, [text, mqtt]);
 
@@ -57,7 +49,6 @@ const Hint = React.memo(({ text, duration, mqtt }) => {
 
     if (trimmedText) {
       const newDuration = duration || config.display.hint_duration_default;
-      console.log('Hint Debug:', { trimmedText, duration, newDuration, configDefault: config.display.hint_duration_default });
       const wasShown = state.shown;
       const previousText = state.text;
       
@@ -94,7 +85,6 @@ const Hint = React.memo(({ text, duration, mqtt }) => {
       
       // Start timer with optimized calculation
       const timerDuration = newDuration * 1000 + FADEIN_ANIMATION_DURATION;
-      console.log('Timer Debug:', { newDuration, timerDuration, FADEIN_ANIMATION_DURATION });
       startTimer(timerDuration);
     } else {
       // Handle hint clearing - if we were showing a hint before, publish clearing event

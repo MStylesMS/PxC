@@ -193,7 +193,6 @@ class App extends Component {
               hint: commandObject.hint,
               duration: commandObject.duration,
             });
-            console.log('App.js Hint State:', { hint: commandObject.hint, duration: commandObject.duration });
             MQTT.publishEvent('command_received', { 
               command: 'hint', 
               hint: commandObject.hint, 
