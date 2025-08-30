@@ -33,8 +33,8 @@ reconnect_interval = 5000
 keep_alive = 60
 
 [display]
-fade_duration_default = 2000
-hint_duration_default = 25
+fade_duration_default = 2
+hint_duration_default = 15
 clock_orientation = -90
 
 # Second hand tick animation style
@@ -45,6 +45,15 @@ seconds_tick_style = alternate
 
 enable_console_logging = true
 ```
+
+#### Fallback Values
+If the configuration file is missing or specific parameters are not set, the application uses these fallback defaults:
+- `fade_duration_default`: 2 seconds (for fadeIn/fadeOut commands)
+- `hint_duration_default`: 15 seconds (for hint display duration)
+- `clock_orientation`: -90 degrees
+- `seconds_tick_style`: "alternate"
+
+All duration values in both the configuration file and MQTT commands are specified in seconds and support decimal values (e.g., 1.5, 2.25).
 
 #### Mosquitto Example Config
 ```conf
@@ -165,16 +174,17 @@ Sets the countdown time and immediately starts the timer.
 ### Fade In
 Makes the clock display visible with a smooth fade-in effect.
 ```json
-{"command": "fadeIn", "duration": 1000}
+{"command": "fadeIn", "duration": 1}
 ```
 **Parameters**:
-- `duration` (optional): Fade duration in milliseconds (default: 2000ms)
+- `duration` (optional): Fade duration in seconds (default: 2 seconds)
 
 **Examples**:
 ```json
 {"command": "fadeIn"}                    // 2 second fade in
-{"command": "fadeIn", "duration": 500}   // 0.5 second fade in
-{"command": "fadeIn", "duration": 3000}  // 3 second fade in
+{"command": "fadeIn", "duration": 0.5}   // 0.5 second fade in
+{"command": "fadeIn", "duration": 3}     // 3 second fade in
+{"command": "fadeIn", "duration": 1.5}   // 1.5 second fade in
 ```
 
 **Legacy Format**: `{"command": "fadein"}` *(will be deprecated)*
@@ -182,16 +192,17 @@ Makes the clock display visible with a smooth fade-in effect.
 ### Fade Out
 Hides the clock display with a smooth fade-out effect.
 ```json
-{"command": "fadeOut", "duration": 500}
+{"command": "fadeOut", "duration": 0.5}
 ```
 **Parameters**:
-- `duration` (optional): Fade duration in milliseconds (default: 2000ms)
+- `duration` (optional): Fade duration in seconds (default: 2 seconds)
 
 **Examples**:
 ```json
 {"command": "fadeOut"}                     // 2 second fade out
-{"command": "fadeOut", "duration": 1000}   // 1 second fade out
-{"command": "fadeOut", "duration": 250}    // Quick 0.25 second fade
+{"command": "fadeOut", "duration": 1}      // 1 second fade out
+{"command": "fadeOut", "duration": 0.25}   // Quick 0.25 second fade
+{"command": "fadeOut", "duration": 3.5}    // Slow 3.5 second fade
 ```
 
 **Legacy Format**: `{"command": "fadeout"}` *(will be deprecated)*
@@ -300,9 +311,13 @@ mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "start", "time": "10:0
 # Show hint
 mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"hint": "Test hint", "duration": 5}'
 
-# Test fade effects
-mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeOut", "duration": 1000}'
-mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeIn", "duration": 1000}'
+# Test fade effects (duration in seconds)
+mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeOut", "duration": 1}'
+mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeIn", "duration": 1}'
+
+# Test with decimal durations
+mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeOut", "duration": 0.5}'
+mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"hint": "Quick hint", "duration": 2.5}'
 
 # Pause
 mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "pause"}'

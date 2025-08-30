@@ -129,9 +129,10 @@ The clock listens on the base topic `paradox/houdini/clock`:
 - Warnings: `paradox/houdini/clock/warnings`
 
 ### Time & Control (JSON)
-- Set time: `{ "time": "MM:SS" }`
+- Set time: `{ "command": "setTime", "time": "MM:SS" }`
 - Start/Resume: `{ "command": "start" }` or `{ "command": "resume" }`
 - Pause: `{ "command": "pause" }`
+- Combined set & start: `{ "command": "start", "time": "MM:SS" }`
 
 ### Visual Effects (JSON)
 - Fade in: `{ "command": "fadeIn", "duration": 1000 }`
@@ -144,21 +145,38 @@ The clock listens on the base topic `paradox/houdini/clock`:
 - `time <seconds>`, `start`, `pause`, `fadein`, `fadeout`, `hint <message>`
 
 ### Examples
-```
-mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"time":"10:00"}'
+```bash
+# Set time to 10 minutes
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"setTime","time":"10:00"}'
+
+# Start countdown
 mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"start"}'
-mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"resume"}'
+
+# Set time and start in one command
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"start","time":"05:00"}'
+
+# Pause countdown
 mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"pause"}'
+
+# Resume countdown
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"resume"}'
+
+# Show hint with custom duration
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"hint":"Look behind the mirror","duration":30}'
+
+# Fade effects
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"fadeOut","duration":1000}'
+mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"fadeIn","duration":1000}'
 ```
 
-For detailed specifications, see [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md).
+For detailed specifications, see [docs/MQTT_API.md](docs/MQTT_API.md).
 
 
 ## 🛠️ Development
 
 ### Next Milestone
 
-- [ ] Migrate MQTT topic, host, and port configuration to an `.ini` file for easier environment management (see docs/MQTT-COMMANDS.md and planned PR).
+- [ ] Migrate MQTT topic, host, and port configuration to an `.ini` file for easier environment management (see docs/MQTT_API.md and planned PR).
 
 ### Available Scripts
 
@@ -241,7 +259,7 @@ src/
 Key docs:
 
 - Deployment guide: `DEPLOYMENT.md` (canonical)
-- MQTT Commands: `docs/MQTT-COMMANDS.md`
+- MQTT Commands: `docs/MQTT_API.md`
 - Web control reference: `docs/Houdini Web Control.pdf`
 - Clock assets: `docs/Countdown_Clock Face.png`
 

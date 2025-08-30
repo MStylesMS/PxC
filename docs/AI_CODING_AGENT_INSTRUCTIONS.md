@@ -11,7 +11,7 @@ These instructions are specifically designed for AI coding agents working on the
 - **AI-Specific Considerations**: Patterns for maintaining consistency across AI-generated code
 
 For **project overview, installation, and operational information**, see [README.md](README.md).
-For **MQTT command specifications**, see [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md).
+For **MQTT command specifications**, see [docs/MQTT_API.md](docs/MQTT_API.md).
 For **testing procedures**, see [docs/TESTING.md](docs/TESTING.md).
 For **deployment instructions**, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
@@ -86,7 +86,7 @@ export default ComponentName;
 
 ## MQTT Integration Patterns
 
-> **Note**: For complete MQTT command specifications and examples, see [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md)
+> **Note**: For complete MQTT command specifications and examples, see [docs/MQTT_API.md](docs/MQTT_API.md)
 
 ### MQTT Client Architecture
 The MQTT integration follows a reactive pattern using RxJS observables:
@@ -272,7 +272,7 @@ When generating or modifying code:
 5. **Documentation**: Include inline comments for complex logic
 
 ### Integration Points
-- **MQTT Commands**: Reference [docs/MQTT-COMMANDS.md](docs/MQTT-COMMANDS.md) for message formats
+- **MQTT Commands**: Reference [docs/MQTT_API.md](docs/MQTT_API.md) for message formats
 - **Deployment**: Reference [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for environment considerations
 - **Testing**: Reference [docs/TESTING.md](docs/TESTING.md) for test scenarios
 

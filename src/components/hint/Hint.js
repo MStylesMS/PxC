@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import config from '../../config';
 import './Hint.css';
 
 const FADEIN_ANIMATION_DURATION = 200;
 
-const Hint = React.memo(({ text, duration = 25 }) => {
+const Hint = React.memo(({ text, duration, mqtt }) => {
   const [state, setState] = useState({
-    duration: 25,
+    duration: config.display.hint_duration_default,
     text: '',
     shown: false,
   });
@@ -13,20 +14,34 @@ const Hint = React.memo(({ text, duration = 25 }) => {
 
   // Optimize timer functions with useCallback
   const stopTimer = useCallback(() => {
+    console.log('stopTimer called, current timer ID:', timerRef.current);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+      console.log('Timer cleared');
       timerRef.current = null;
     }
   }, []);
 
   const startTimer = useCallback((timerDuration) => {
+    console.log('startTimer called with:', timerDuration);
     if (!isNaN(timerDuration) && timerDuration > 0) {
+      console.log('Setting timeout for:', timerDuration, 'ms');
       timerRef.current = setTimeout(() => {
+        console.log('Timer fired! Hiding hint');
+        // Publish hint expiration event before hiding
+        if (mqtt && typeof mqtt.publishEvent === 'function') {
+          mqtt.publishEvent('hint_expired', { text: text?.trim() }).subscribe({
+            error: (err) => console.error('Failed to publish hint expiration event:', err)
+          });
+        }
         setState(prev => ({ ...prev, shown: false }));
         timerRef.current = null;
       }, timerDuration);
+      console.log('Timer ID:', timerRef.current);
+    } else {
+      console.log('Invalid timer duration:', timerDuration);
     }
-  }, []);
+  }, [text, mqtt]);
 
   // Optimize text processing with useMemo
   const trimmedText = useMemo(() => text && text.trim(), [text]);
@@ -41,27 +56,72 @@ const Hint = React.memo(({ text, duration = 25 }) => {
     stopTimer();
 
     if (trimmedText) {
-      const newDuration = duration || 25;
+      const newDuration = duration || config.display.hint_duration_default;
+      console.log('Hint Debug:', { trimmedText, duration, newDuration, configDefault: config.display.hint_duration_default });
+      const wasShown = state.shown;
+      const previousText = state.text;
+      
+      // Check if this is replacing an existing hint
+      if (wasShown && previousText && previousText !== trimmedText) {
+        // Publish hint interruption event
+        if (mqtt && typeof mqtt.publishEvent === 'function') {
+          mqtt.publishEvent('hint_interrupted', { 
+            interrupted_text: previousText,
+            new_text: trimmedText,
+            new_duration: newDuration
+          }).subscribe({
+            error: (err) => console.error('Failed to publish hint interruption event:', err)
+          });
+        }
+      }
+      
       setState({
         text: trimmedText,
         duration: newDuration,
         shown: true,
       });
       
+      // Publish hint displayed event
+      if (mqtt && typeof mqtt.publishEvent === 'function') {
+        mqtt.publishEvent('hint_displayed', { 
+          text: trimmedText, 
+          duration: newDuration,
+          replaced_previous: wasShown && previousText && previousText !== trimmedText
+        }).subscribe({
+          error: (err) => console.error('Failed to publish hint displayed event:', err)
+        });
+      }
+      
       // Start timer with optimized calculation
       const timerDuration = newDuration * 1000 + FADEIN_ANIMATION_DURATION;
+      console.log('Timer Debug:', { newDuration, timerDuration, FADEIN_ANIMATION_DURATION });
       startTimer(timerDuration);
     } else {
+      // Handle hint clearing - if we were showing a hint before, publish clearing event
+      const wasShown = state.shown;
+      const previousText = state.text;
+      
+      if (wasShown && previousText) {
+        // Publish hint cleared event
+        if (mqtt && typeof mqtt.publishEvent === 'function') {
+          mqtt.publishEvent('hint_cleared_display', { 
+            cleared_text: previousText
+          }).subscribe({
+            error: (err) => console.error('Failed to publish hint cleared display event:', err)
+          });
+        }
+      }
+      
       setState({
         text: null,
-        duration: duration || 25,
+        duration: duration || config.display.hint_duration_default,
         shown: false,
       });
     }
 
     // Cleanup timer on unmount or dependency change
     return () => stopTimer();
-  }, [trimmedText, duration, stopTimer, startTimer]);
+  }, [trimmedText, duration, stopTimer, startTimer, mqtt]);
 
   // Memoize className to prevent unnecessary re-renders
   const hintClassName = useMemo(() => state.shown ? 'shown' : '', [state.shown]);

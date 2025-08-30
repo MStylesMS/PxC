@@ -57,6 +57,11 @@ const initializeMQTTClient = () => {
     // Optimized message handler
     client.onMessageArrived = (message) => {
       try {
+        // DEBUG: Log all received MQTT messages
+        console.log('Raw MQTT Message:', {
+          topic: message.destinationName,
+          payload: message.payloadString
+        });
         subscribeEmitter.emit(message.destinationName, message.payloadString);
       } catch (error) {
         // eslint-disable-next-line no-console

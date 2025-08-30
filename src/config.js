@@ -16,8 +16,8 @@ const defaults = {
     keep_alive: 60,
   },
   display: {
-    fade_duration_default: 2000,
-    hint_duration_default: 25,
+    fade_duration_default: 2,
+    hint_duration_default: 15,
     clock_orientation: -90,
   seconds_tick_style: 'alternate', // 'alternate' | 'tick1' | 'tick2' | 'off'
   },

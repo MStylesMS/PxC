@@ -25,12 +25,20 @@ npm run start
 #### Time Setting
 **Test**: Set various countdown times
 ```json
-{"time": "05:30"}  // 5 minutes 30 seconds
-{"time": "01:00"}  // 1 minute
-{"time": "00:45"}  // 45 seconds
-{"time": "10:00"}  // 10 minutes
+{"command": "setTime", "time": "05:30"}  // 5 minutes 30 seconds
+{"command": "setTime", "time": "01:00"}  // 1 minute
+{"command": "setTime", "time": "00:45"}  // 45 seconds
+{"command": "setTime", "time": "10:00"}  // 10 minutes
 ```
 **Expected**: Clock displays correct time with appropriate hands
+
+#### Combined Time Set & Start
+**Test**: Set time and start in one command
+```json
+{"command": "start", "time": "05:00"}   // Set 5 minutes and start
+{"command": "resume", "time": "03:30"}  // Set 3:30 and resume
+```
+**Expected**: Clock immediately shows new time and begins countdown
 
 #### Clock Control
 **Test**: Start and pause functionality
@@ -70,18 +78,21 @@ npm run start
 #### Invalid Commands
 **Test**: Malformed or invalid messages
 ```json
-{"invalid": "command"}        // Should be ignored
-{"time": "invalid"}          // Should be ignored
-{"command": "unknown"}       // Should be ignored
+{"invalid": "command"}                    // Should be ignored with command_rejected event
+{"command": "setTime", "time": "invalid"}// Should be rejected with invalid_time_format
+{"command": "unknown"}                   // Should be rejected with unknown_command
+{"command": "setTime", "time": "61:00"}  // Should be rejected (time > 60:00)
+{"malformed json"}                       // Should trigger warning
 ```
-**Expected**: Application continues normally, invalid commands ignored
+**Expected**: Application continues normally, invalid commands publish rejection events
 
 #### Extreme Values
 **Test**: Boundary conditions
 ```json
-{"time": "00:00"}           // Zero time
-{"time": "99:99"}           // Large time values
-{"duration": 0}             // Zero duration effects
+{"command": "setTime", "time": "00:00"}  // Zero time (valid)
+{"command": "setTime", "time": "60:00"}  // Maximum time (valid)
+{"command": "fadeIn", "duration": 0}     // Zero duration effects
+{"hint": "", "duration": 5}              // Empty hint (clears current)
 ```
 
 ## Escape Room Operational Testing
@@ -89,14 +100,19 @@ npm run start
 ### Complete Game Scenario
 1. **Pre-Game Setup**
    ```json
-   {"command": "fadeout", "duration": 500}
+   {"command": "fadeOut", "duration": 500}
    ```
 
 2. **Game Start**
    ```json
-   {"time": "60:00"}
+   {"command": "setTime", "time": "60:00"}
    {"command": "fadeIn", "duration": 2000}
    {"command": "start"}
+   ```
+   **Alternative** (combined command):
+   ```json
+   {"command": "fadeIn", "duration": 2000}
+   {"command": "start", "time": "60:00"}
    ```
 
 3. **Mid-Game Hints**
@@ -106,7 +122,7 @@ npm run start
 
 4. **Final Countdown**
    ```json
-   {"time": "05:00"}
+   {"command": "setTime", "time": "05:00"}
    {"hint": "Final challenge!", "duration": 10}
    ```
 

@@ -41,7 +41,7 @@ describe('config loader', () => {
       cfg = require('./config').default;
     });
     expect(cfg.mqtt.host).toBeDefined();
-    expect(cfg.display.fade_duration_default).toBe(2000);
+        expect(cfg.display.fade_duration_default).toBe(2);
   });
 
   test('merges window.__APP_CONFIG__ over defaults when present', async () => {
