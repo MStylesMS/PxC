@@ -18,10 +18,12 @@ const MinutesHand = React.memo(({ time, adjusting = false }) => {
       prevRotationRef.current = raw;
       return raw;
     }
-    // Enforce CCW continuity (countdown)
+    // Choose the shortest angular path between previous and new angle.
+    // Normalize delta to (-PI, PI] and apply it directly so the hand
+    // can move clockwise or counter-clockwise depending on which
+    // is shorter (prevents large full-rotation jumps).
     let delta = raw - prevRotationRef.current;
     delta = ((delta + Math.PI) % twoPi) - Math.PI;
-    if (delta > 0) delta -= twoPi;
     const adjusted = prevRotationRef.current + delta;
     prevRotationRef.current = adjusted;
     return adjusted;

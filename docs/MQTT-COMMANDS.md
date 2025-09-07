@@ -308,6 +308,7 @@ mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "fadeIn", "duration": 
 mosquitto_pub -h $HOST -p $PORT -t $TOPIC -m '{"command": "pause"}'
 ```
 
+<!-- Legacy format testing - use only if migration is incomplete -->
 ### Legacy Format (Current Implementation)
 ```bash
 # Until PR-8 is completed, use legacy format:

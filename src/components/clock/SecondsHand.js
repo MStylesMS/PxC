@@ -26,12 +26,13 @@ const SecondsHand = React.memo(({ time, animated, adjusting = false }) => {
       return raw;
     }
 
-    // Ensure continuous CCW motion across the 15 marker (avoid long CW jump)
+    // Choose the shortest angular path between previous and new angle.
+    // Normalize delta to (-PI, PI] and apply it directly so the hand
+    // can move clockwise or counter-clockwise depending on which
+    // is shorter (prevents large full-rotation jumps).
     let delta = raw - prevRotationRef.current;
-    // Normalize to (-π, π]
+    // Normalize to (-PI, PI]
     delta = ((delta + Math.PI) % twoPi) - Math.PI;
-    // Prefer CCW (negative) small step
-    if (delta > 0) delta -= twoPi;
     const adjusted = prevRotationRef.current + delta;
     prevRotationRef.current = adjusted;
     return adjusted;

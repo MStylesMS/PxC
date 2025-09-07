@@ -5,7 +5,8 @@
   transition: opacity 2000ms;
   opacity: 0;
   transform: translate(-50%, -50%) rotate(-90deg);
-  width: 60vh; /* limit to ~60% of rotated viewport height */
+  width: 60vh;
+  /* limit to ~60% of rotated viewport height */
 }
 
 #hint.shown {
@@ -15,8 +16,9 @@
 #hint div {
   text-align: center;
   color: white;
-  text-shadow: 10px 10px 15px rgba(0, 0, 0, 0.7);
-  font-size: 52px; /* ~20% smaller than 64px */
+  text-shadow: 10px 10px 15px rgba(0, 0, 0, 0.9);
+  font-size: 52px;
+  /* ~20% smaller than 64px */
   line-height: 1;
   font-family: Alger, serif;
 }
