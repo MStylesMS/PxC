@@ -75,10 +75,18 @@ sudo systemctl restart mosquitto
 The clock subscribes to this topic to receive control commands.
 
 ### State (Output) - `paradox/houdini/clock/state`
-The clock publishes heartbeat messages to this topic every 15 seconds:
+The clock publishes state messages to this topic periodically (default ~10–15s) and immediately on key changes (time set, start/resume/pause, fade transitions, hint updates, and explicit `getState`).
+
+Each state JSON includes:
+```json
+{
+  "state": "running|paused",
+  "time": "MM:SS",
+  "kiosk": true,
+  "visible": true
+}
 ```
-active
-```
+`visible` is a boolean that is `true` only after a fadeIn completes and `false` immediately on fadeOut start.
 
 ### Events (Output) - `paradox/houdini/clock/events`
 The clock publishes acknowledgment events when commands are received:
@@ -206,6 +214,13 @@ Hides the clock display with a smooth fade-out effect.
 ```
 
 **Legacy Format**: `{"command": "fadeout"}` *(will be deprecated)*
+
+### Immediate State Query
+Request an immediate state publish (rate-limited to one every 900ms):
+```json
+{"command": "getState"}
+```
+If called too soon after a prior `getState`, a `command_rejected` event with `reason: "rate_limited"` is published.
 
 ## 4. Hint System Commands
 
@@ -439,7 +454,7 @@ The application publishes comprehensive events for debugging:
 |-------------|-------------|
 | `paradox/houdini/clock/events` | `command_received`, `hint_displayed`, `hint_expired`, `hint_replaced`, `hint_cleared`, `hint_interrupted`, `timer_expired` |
 | `paradox/houdini/clock/warnings` | Malformed JSON, invalid commands, validation errors |
-| `paradox/houdini/clock/state` | Current clock state (time, active, shown, etc.) |
+| `paradox/houdini/clock/state` | Current clock state (time, state, visible, etc.) |
 
 ## Troubleshooting
 

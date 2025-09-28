@@ -171,6 +171,23 @@ mosquitto_pub -h localhost -t paradox/houdini/clock/commands -m '{"command":"fad
 
 For detailed specifications, see [docs/MQTT_API.md](docs/MQTT_API.md).
 
+### State Query & Visibility
+- Query current state immediately:
+   - `{ "command": "getState" }` (rate-limited: rejected if issued within 900ms of prior getState)
+- Each state message now includes: `visible: <boolean>`
+   - `visible:true` only after a fadeIn completes
+   - `visible:false` immediately when a fadeOut begins (or if hidden at startup)
+
+Example state payload:
+```json
+{
+   "state": "running",
+   "time": "23:14",
+   "kiosk": true,
+   "visible": true
+}
+```
+
 
 ## 🛠️ Development
 
