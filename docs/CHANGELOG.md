@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - CI/CD pipeline implementation
+ 
+## [1.2.0] - 2025-09-28
+
+### Added
+- `getState` MQTT command: immediate state publish on demand (rate-limited to one every 900ms).
+- Boolean `visible` flag in every state publish (`true` only after fadeIn completes; `false` immediately when fadeOut begins).
+
+### Changed
+- Immediate publishes now occur on visibility and key state changes (start/resume/pause/fade transitions) resetting the periodic state timer cadence.
+
+### Notes
+- Backward compatible: prior consumers ignoring `visible` are unaffected.
+- Replaced planned numeric visibility percentage with simpler boolean logic per operator feedback.
+
 ## [1.1.0] - 2025-08-11
 
 ### Changed
