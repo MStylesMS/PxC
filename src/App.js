@@ -17,15 +17,25 @@ class App extends Component {
       },
       shown: false,
       fadeDuration: config.display.fade_duration_default * 1000, // Convert config seconds to milliseconds for CSS
+      // New authoritative visibility flag: true only AFTER fadeIn completes, false immediately on fadeOut start
+      visible: false
     };
-  this.heartbeatInterval = null;
-  this.statePublishInterval = null;
+    this.heartbeatInterval = null;
+    this.statePublishInterval = null;
+    this.lastStatePublishAt = 0; // track last publish time
+    this.lastGetStateAt = 0; // rate-limit getState commands
+    this.pendingFadeInTimer = null; // timer for setting visible true after fadeIn completes
   }
 
   componentDidMount() {
     // Start heartbeat and state publisher
     this.startHeartbeat();
     this.startStatePublisher();
+
+    // If the initial state considers the clock shown at mount, mark visible immediately
+    if (this.state.shown && !this.state.visible) {
+      this.setState({ visible: true }, () => this.immediatePublish('initialVisible'));
+    }
 
     const stream = MQTT && typeof MQTT.subscribe === 'function'
       ? MQTT.subscribe()
@@ -74,7 +84,7 @@ class App extends Component {
         try {
           // DEBUG: Log all received commands
           console.log('MQTT Command Received:', JSON.stringify(commandObject));
-          
+
           // Combined setTime+command handling
           const hasCommand = commandObject && commandObject.command;
           if ((hasCommand && (commandObject.command === 'start' || commandObject.command === 'resume')) && commandObject.time) {
@@ -161,16 +171,16 @@ class App extends Component {
             const currentHint = this.state.hint;
             const isReplacing = currentHint && currentHint.trim().length > 0;
             const isClearing = !commandObject.hint || commandObject.hint.trim().length === 0;
-            
+
             // If trying to clear when no hint is displayed, ignore the command
             if (isClearing && !isReplacing) {
               return; // Silently ignore empty hint when no hint is currently displayed
             }
-            
+
             if (isReplacing) {
               if (isClearing) {
                 // Publish hint clearing event
-                MQTT.publishEvent('hint_cleared', { 
+                MQTT.publishEvent('hint_cleared', {
                   cleared_hint: currentHint,
                   cleared_duration: this.state.duration || 25
                 }).subscribe({
@@ -178,7 +188,7 @@ class App extends Component {
                 });
               } else {
                 // Publish hint replacement event
-                MQTT.publishEvent('hint_replaced', { 
+                MQTT.publishEvent('hint_replaced', {
                   previous_hint: currentHint,
                   new_hint: commandObject.hint,
                   previous_duration: this.state.duration || 25,
@@ -188,14 +198,14 @@ class App extends Component {
                 });
               }
             }
-            
+
             this.setState({
               hint: commandObject.hint,
               duration: commandObject.duration,
             });
-            MQTT.publishEvent('command_received', { 
-              command: 'hint', 
-              hint: commandObject.hint, 
+            MQTT.publishEvent('command_received', {
+              command: 'hint',
+              hint: commandObject.hint,
               duration: commandObject.duration || 25,
               replaced_previous: isReplacing,
               is_clearing: isClearing
@@ -204,6 +214,27 @@ class App extends Component {
             });
           } else if (commandObject && commandObject.command) {
             switch (commandObject.command) {
+              case 'getState': {
+                const now = Date.now();
+                if (now - this.lastGetStateAt < 900) {
+                  // Rate limit: publish rejection event
+                  MQTT.publishEvent('command_rejected', {
+                    reason: 'rate_limited',
+                    command: 'getState',
+                    since_last_ms: now - this.lastGetStateAt
+                  }).subscribe({
+                    error: (err) => console.error('Failed to publish rate limit event:', err)
+                  });
+                  return;
+                }
+                this.lastGetStateAt = now;
+                // Acknowledge command
+                MQTT.publishEvent('command_received', { command: 'getState' }).subscribe({
+                  error: (err) => console.error('Failed to publish command event:', err)
+                });
+                this.immediatePublish('getState');
+                break;
+              }
               case 'start':
               case 'resume': {
                 // Only run if not already handled above (no time field)
@@ -216,6 +247,7 @@ class App extends Component {
                     MQTT.publishEvent('command_received', { command: commandObject.command }).subscribe({
                       error: (err) => console.error('Failed to publish command event:', err)
                     });
+                    this.lastStatePublishAt = Date.now();
                   });
                 }
                 break;
@@ -227,33 +259,62 @@ class App extends Component {
                   MQTT.publishState(payload).subscribe({
                     error: (err) => console.error('Failed to publish state after pause:', err)
                   });
-                  MQTT.publishEvent('command_received', { 
-                    command: 'pause', 
+                  MQTT.publishEvent('command_received', {
+                    command: 'pause',
+                    ...(commandObject.duration && { duration: commandObject.duration })
+                  }).subscribe({
+                    error: (err) => console.error('Failed to publish command event:', err)
+                  });
+                  this.lastStatePublishAt = Date.now();
+                });
+                break;
+              }
+              case 'fadeout':
+              case 'fadeOut':
+                if (this.pendingFadeInTimer) {
+                  clearTimeout(this.pendingFadeInTimer);
+                  this.pendingFadeInTimer = null;
+                }
+                this.setState({
+                  shown: false,
+                  visible: false, // immediately not visible when fade out begins
+                  fadeDuration: commandObject.duration ? commandObject.duration * 1000 : config.display.fade_duration_default * 1000
+                }, () => {
+                  this.immediatePublish('fadeOut');
+                  MQTT.publishEvent('command_received', {
+                    command: commandObject.command,
                     ...(commandObject.duration && { duration: commandObject.duration })
                   }).subscribe({
                     error: (err) => console.error('Failed to publish command event:', err)
                   });
                 });
                 break;
-              }
-              case 'fadeout':
-              case 'fadeOut':
-                this.setState({ shown: false, fadeDuration: commandObject.duration ? commandObject.duration * 1000 : config.display.fade_duration_default * 1000 });
-                MQTT.publishEvent('command_received', { 
-                  command: commandObject.command,
-                  ...(commandObject.duration && { duration: commandObject.duration })
-                }).subscribe({
-                  error: (err) => console.error('Failed to publish command event:', err)
-                });
-                break;
               case 'fadein':
               case 'fadeIn':
-                this.setState({ shown: true, fadeDuration: commandObject.duration ? commandObject.duration * 1000 : config.display.fade_duration_default * 1000 });
-                MQTT.publishEvent('command_received', { 
-                  command: commandObject.command,
-                  ...(commandObject.duration && { duration: commandObject.duration })
-                }).subscribe({
-                  error: (err) => console.error('Failed to publish command event:', err)
+                if (this.pendingFadeInTimer) {
+                  clearTimeout(this.pendingFadeInTimer);
+                  this.pendingFadeInTimer = null;
+                }
+                const newFadeDuration = commandObject.duration ? commandObject.duration * 1000 : config.display.fade_duration_default * 1000;
+                this.setState({
+                  shown: true,
+                  fadeDuration: newFadeDuration
+                  // visible remains false until completion
+                }, () => {
+                  MQTT.publishEvent('command_received', {
+                    command: commandObject.command,
+                    ...(commandObject.duration && { duration: commandObject.duration })
+                  }).subscribe({
+                    error: (err) => console.error('Failed to publish command event:', err)
+                  });
+                  // Schedule making it visible after fade completes
+                  this.pendingFadeInTimer = setTimeout(() => {
+                    this.pendingFadeInTimer = null;
+                    // If still shown (wasn't faded out mid-way)
+                    if (this.state.shown && !this.state.visible) {
+                      this.setState({ visible: true }, () => this.immediatePublish('fadeInComplete'));
+                    }
+                  }, newFadeDuration);
                 });
                 break;
               default:
@@ -263,9 +324,9 @@ class App extends Component {
                 MQTT.publishWarning(warningMsg, commandObject).subscribe({
                   error: (err) => console.error('Failed to publish warning:', err)
                 });
-                MQTT.publishEvent('command_rejected', { 
-                  reason: 'unknown_command', 
-                  received: commandObject.command 
+                MQTT.publishEvent('command_rejected', {
+                  reason: 'unknown_command',
+                  received: commandObject.command
                 }).subscribe({
                   error: (err) => console.error('Failed to publish rejection event:', err)
                 });
@@ -275,9 +336,9 @@ class App extends Component {
           const errorMsg = 'Error processing command';
           // eslint-disable-next-line no-console
           console.error(errorMsg, e);
-          MQTT.publishWarning(errorMsg, { 
-            command: commandObject, 
-            error: e.message 
+          MQTT.publishWarning(errorMsg, {
+            command: commandObject,
+            error: e.message
           }).subscribe({
             error: (err) => console.error('Failed to publish warning:', err)
           });
@@ -288,6 +349,10 @@ class App extends Component {
   componentWillUnmount() {
     this.stopHeartbeat();
     this.stopStatePublisher();
+    if (this.pendingFadeInTimer) {
+      clearTimeout(this.pendingFadeInTimer);
+      this.pendingFadeInTimer = null;
+    }
     if (MQTT && typeof MQTT.disconnect === 'function') {
       MQTT.disconnect();
     }
@@ -335,7 +400,7 @@ class App extends Component {
         const dh = Math.abs(window.outerHeight - window.screen.height);
         if (dw < 16 && dh < 80) return true;
       }
-    } catch (_) {}
+    } catch (_) { }
     return false;
   }
 
@@ -347,7 +412,7 @@ class App extends Component {
     if (typeof window !== 'undefined') {
       kiosk = this.detectKioskMode();
     }
-    return { state: stateStr, time: timeStr, kiosk };
+    return { state: stateStr, time: timeStr, kiosk, visible: !!this.state.visible };
   }
 
   // Publish state every 10 seconds
@@ -357,22 +422,23 @@ class App extends Component {
       try {
         const currentTime = this.getDerivedTimeValue();
         const wasActive = this.state.active;
-        
+
         // Check if timer just expired
         if (wasActive && currentTime <= 0 && this.state.time.value > 0) {
-          MQTT.publishEvent('timer_expired', { 
-            final_time: '00:00', 
-            was_active: true 
+          MQTT.publishEvent('timer_expired', {
+            final_time: '00:00',
+            was_active: true
           }).subscribe({
             error: (err) => console.error('Failed to publish timer expiration event:', err)
           });
         }
-        
+
         const payload = this.buildStatePayload();
         if (MQTT && typeof MQTT.publishState === 'function') {
           MQTT.publishState(payload).subscribe({
             error: (err) => console.error('Failed to publish periodic state:', err)
           });
+          this.lastStatePublishAt = Date.now();
         }
       } catch (e) {
         // eslint-disable-next-line no-console
@@ -385,7 +451,8 @@ class App extends Component {
       MQTT.publishState(payload).subscribe({
         error: (err) => console.error('Failed to publish initial state:', err)
       });
-    } catch (_) {}
+      this.lastStatePublishAt = Date.now();
+    } catch (_) { }
   }
 
   stopStatePublisher() {
@@ -400,22 +467,38 @@ class App extends Component {
     console.debug('App render');
     const appClasses = `App ${this.state.shown ? 'shown' : 'hidden'}`;
     const appStyle = { animationDuration: `${this.state.fadeDuration}ms` };
-    
+
     return (
       <div className={appClasses} style={appStyle} role="main" data-testid="app">
-        <Clock 
-          active={this.state.active} 
-          time={this.state.time} 
+        <Clock
+          active={this.state.active}
+          time={this.state.time}
           data-testid="clock"
         />
-        <Hint 
-          text={this.state.hint} 
-          duration={this.state.duration} 
+        <Hint
+          text={this.state.hint}
+          duration={this.state.duration}
           data-testid="hint"
           mqtt={MQTT}
         />
       </div>
     );
+  }
+
+  // Central method to publish state immediately and reset periodic timer schedule
+  immediatePublish(reason = 'manual') {
+    try {
+      const payload = this.buildStatePayload();
+      if (MQTT && typeof MQTT.publishState === 'function') {
+        MQTT.publishState(payload).subscribe({
+          error: (err) => console.error('Failed to publish state (', reason, '):', err)
+        });
+        this.lastStatePublishAt = Date.now();
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Immediate publish failed', e);
+    }
   }
 }
 
