@@ -38,7 +38,11 @@ Benefits:
 ## Design Details
 ### Command Handling
 - Extend existing command switch to include `getState`.
-- On receipt, call `publishState({ reason: 'manual' })`.
+- Maintain a timestamp of the last successful immediate state publish (manual or triggered by key state change).
+- On receipt of `getState`:
+  * If >= 900ms since last manual/immediate publish: call `publishState({ reason: 'manual' })` immediately.
+  * Else: publish an event `command_rejected` with `command: "getState"`, `reason: "rate_limited"`, and `since_last_ms` (integer). Do not publish state.
+  * 900ms chosen to stay < human-perceived “1s stale” threshold while protecting broker/UI from spam.
 
 ### `visible` Tracking
 MVP Behavior:
@@ -79,7 +83,7 @@ Scenario | Steps | Expected
 Baseline getState | Send `getState` | Immediate state payload with `visible` boolean present.
 Fade in sequence | Issue `fadeIn` (duration N) then query mid-fade | `visible:false` until animation completes; post-completion publish shows `visible:true`.
 Fade out sequence | Issue `fadeOut` | State publish (either immediate or next) reflects `visible:false` immediately.
-Rapid query spam | Send 5 `getState` quickly | Each returns current `visible` without throttling issues (optional rate-limit can be added).
+Rapid query spam | Send 5 `getState` quickly | First accepted; subsequent <900ms attempts rejected with `command_rejected` (reason `rate_limited`).
 Startup default hidden | Start app with default hidden | `visible:false` until first fadeIn completes (or explicit show command sets it).
 Startup default shown | Start app with `shown:true` | First state shows `visible:true`.
 
@@ -91,7 +95,7 @@ Add concise log lines:
 ## Risks & Mitigations
 Risk | Mitigation
 ---- | ----------
-High-frequency getState spamming | (Optional) Rate-limit via simple timestamp check (e.g., min interval 250ms).
+High-frequency getState spamming | Mandatory 900ms rate-limit with rejection event.
 Out-of-sync DOM vs internal value | Optionally sample computed opacity on publish (future enhancement).
 Missing completion publish after fadeIn | Ensure fadeIn completion handler always invokes a state publish (add try/finally around animation callback).
 
@@ -105,7 +109,8 @@ Revert commit; no schema incompatibility (extra field is additive). UI PR will t
 
 ## Acceptance Criteria
 - `visible` boolean included in every state publish.
-- getState command yields immediate publish without affecting animation state.
+- getState command yields immediate publish when >=900ms since last immediate publish.
+- Requests <900ms since last manual publish emit `command_rejected` (no state publish) with `since_last_ms`.
 - FadeIn sets `visible:true` only after completion; FadeOut sets `visible:false` at start.
 
 ---

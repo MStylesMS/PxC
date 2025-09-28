@@ -66,10 +66,21 @@ sudo systemctl restart mosquitto
 The clock subscribes to this topic to receive control commands.
 
 ### State (Output) - `paradox/houdini/clock/state`
-The clock publishes heartbeat messages to this topic every 15 seconds:
+The clock publishes a JSON snapshot approximately every 10–15 seconds and immediately upon key changes (time set, start/resume/pause, fade transitions, hint lifecycle events, explicit `getState`).
+
+Example payload:
+```json
+{
+  "state": "running",
+  "time": "12:34",
+  "kiosk": true,
+  "visible": true
+}
 ```
-active
-```
+Field notes:
+- `visible`: true only after a fadeIn completes; false immediately when fadeOut starts or mid-fade-in.
+- `time`: MM:SS remaining.
+- Additional fields may be added in minor versions (tolerate extras).
 
 ### Events (Output) - `paradox/houdini/clock/events`
 The clock publishes acknowledgment events when commands are received:
@@ -195,6 +206,22 @@ Hides the clock display with a smooth fade-out effect.
 ```
 
 **Legacy Format**: `{"command": "fadeout"}` *(will be deprecated)*
+
+### Immediate State Query
+Force an immediate publish of current state (rate-limited to one successful publish every 900ms):
+```json
+{"command": "getState"}
+```
+If a request violates the rate limit a `command_rejected` event is published with:
+```json
+{
+  "event": "command_rejected",
+  "command": "getState",
+  "reason": "rate_limited",
+  "since_last_ms": 450
+}
+```
+Clients should back off and retry after ~1s.
 
 ## 4. Hint System Commands
 
@@ -425,7 +452,7 @@ The application publishes comprehensive events for debugging:
 |-------------|-------------|
 | `paradox/houdini/clock/events` | `command_received`, `hint_displayed`, `hint_expired`, `hint_replaced`, `hint_cleared`, `hint_interrupted`, `timer_expired` |
 | `paradox/houdini/clock/warnings` | Malformed JSON, invalid commands, validation errors |
-| `paradox/houdini/clock/state` | Current clock state (time, active, shown, etc.) |
+| `paradox/houdini/clock/state` | Current clock state (time, state, visible, etc.) |
 
 ## Troubleshooting
 

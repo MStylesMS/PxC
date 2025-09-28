@@ -82,20 +82,26 @@ useEffect(() => {
   // Countdown interval management
 }, [props.active, time]);
 ```
-
-### Hand Components (Pure Presentation)
-
-**SecondsHand.js** & **MinutesHand.js**:
-- Pure functional components
+  state = {
+    secondsRemaining: 600,   // Canonical countdown value (internally seconds)
+    state: 'paused',         // 'running' | 'paused'
+    hint: '',                // Current hint text (if any)
+    visible: false,          // Authoritative visibility (true only after fadeIn completes)
+    pendingFadeInTimer: null,// Timer id for delayed visible flip
+    lastStatePublishAt: 0,   // Timestamp of last state message publish
+    lastGetStateAt: 0        // Timestamp of last accepted getState
 - CSS transform-based rotation
 - Smooth animation transitions
 - Mathematical rotation calculations
+**MQTT Commands Handled (normalized modern set)**:
+- `setTime` (with `time: "MM:SS"`)
+- `start` / `resume`
+- `pause`
+- `fadeIn` / `fadeOut` (legacy lowercase variants still accepted temporarily)
+- Hint via `{ "hint": "text", "duration": N }`
+- `getState` (new): Forces immediate state publish (subject to 900ms rate limit)
 
-**Rotation Logic**:
-```javascript
-// Seconds: 6 degrees per second (360° / 60s)
-const secondsRotation = (60 - seconds) * 6;
-
+Legacy plain-text payload commands (e.g., `time 300`, `fadein`) are being phased out; JSON form is authoritative.
 // Minutes: 6 degrees per minute (360° / 60m)
 const minutesRotation = (60 - minutes) * 6;
 ```
@@ -105,12 +111,19 @@ const minutesRotation = (60 - minutes) * 6;
 **Purpose**: Temporary message display with auto-hide functionality
 
 **Features**:
-- Timer-based auto-hide (5-second default)
-- Text change detection and timer reset
-- Proper cleanup to prevent memory leaks
+**Command Topic**: `paradox/houdini/clock/commands`
 
-## 🔧 Development Setup
-
+All new commands use JSON:
+```json
+{"command": "setTime", "time": "10:00"}
+{"command": "start"}
+{"command": "pause"}
+{"command": "fadeIn", "duration": 1500}
+{"command": "fadeOut"}
+{"hint": "Check the mirror", "duration": 8}
+{"command": "getState"}
+```
+Rate limit: `getState` accepted at most once every 900ms; violations publish a `command_rejected` event.
 ### Prerequisites
 
 ```bash
@@ -122,12 +135,35 @@ npm --version   # or yarn --version
 ```
 
 ### Environment Configuration
+### Message Protocol
 
-Create a `.env` file for local development:
+**Topics**:
+- Commands: `paradox/houdini/clock/commands`
+- State: `paradox/houdini/clock/state`
+- Events: `paradox/houdini/clock/events`
+- Warnings: `paradox/houdini/clock/warnings`
 
-```bash
-# MQTT Configuration
-REACT_APP_MQTT_HOST=localhost
+**State Payload Example**:
+```json
+{
+  "state": "running",
+  "time": "12:34",
+  "visible": true,
+  "kiosk": true
+}
+```
+`visible` true only after fadeIn completion; false immediately at fadeOut start and during fadeIn progression.
+
+**Rate Limiting**:
+`getState` publishes are throttled to one every 900ms. If exceeded, an event is emitted:
+```json
+{
+  "event": "command_rejected",
+  "command": "getState",
+  "reason": "rate_limited",
+  "since_last_ms": 420
+}
+```
 REACT_APP_MQTT_PORT=1884
 REACT_APP_MQTT_TOPIC=Paradox/Houdini/Mirror/Clock/Commands
 
