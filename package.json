@@ -39,9 +39,9 @@
     "prettier": "^3.3.3"
   },
   "scripts": {
-  "prebuild": "node scripts/generate-runtime-config.js",
-  "start": "cross-env PUBLIC_URL=/ REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
-  "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
+    "prebuild": "node scripts/generate-runtime-config.js",
+    "start": "cross-env PUBLIC_URL=/ REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts start",
+    "build": "cross-env REACT_APP_MQTT_HOST=localhost REACT_APP_MQTT_PORT=1884 react-scripts build",
     "build:analyze": "npm run build && npx serve -s build",
     "build:stats": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
     "build:size": "npm run build && npx bundlesize",
@@ -53,9 +53,9 @@
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
     "format:check": "prettier --check src/**/*.{js,jsx,ts,tsx,json,css,md}",
     "perf:audit": "lighthouse http://localhost:3000 --output=html --output-path=./performance-report.html",
-  "perf:profile": "npm run build && npx serve -s build & sleep 5 && npx lighthouse http://localhost:3000",
-  "optimize:images": "npx imagemin src/**/*.{jpg,jpeg,png,gif,svg} --out-dir=src/optimized-images",
-  "smoke:visual": "bash scripts/visual-smoke.sh"
+    "perf:profile": "npm run build && npx serve -s build & sleep 5 && npx lighthouse http://localhost:3000",
+    "optimize:images": "npx imagemin src/**/*.{jpg,jpeg,png,gif,svg} --out-dir=src/optimized-images",
+    "smoke:visual": "bash scripts/visual-smoke.sh"
   },
   "eslintConfig": {
     "extends": [
