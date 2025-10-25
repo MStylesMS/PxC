@@ -4,10 +4,10 @@ This document is a high-level plan for Paradox Clock (PxC). It describes goals, 
 
 ## Goals
 
-- Provide a small, well-structured React application that can render different clock types (analog, LED/countdown, flip, hourglass, etc.).
-- Support configuration-driven customization via `.ini` files so non-developers can author variants (images, colors, rotation origin, starting offsets, display mode).
-- Keep the original Houdini Clock content available for reference in `/archive` but start PxC as a clean, generic implementation.
-- Be easy to extend with new clock renderers and assets.
+- Provide a small, well-structured React application that can render different clock types (analog, LED/countdown, flip, hourglass, etc.). PxC will focus primarily on configurable countdown displays but should also support real-time clock and stopwatch modes.
+- Support configuration-driven customization via `.ini` files so authors can create variants (images, colors, rotation origin, starting offsets, display mode, and asset selections such as multiple backgrounds, hands, digit sets, and fonts).
+- Keep the original Houdini Clock content available for reference in `/archive` but start PxC as a clean, generic implementation. Houdini-derived styles will be one of many selectable clock styles.
+- Be easy to extend with new clock renderers and assets and to add multiple named styles (see naming convention below).
 
 ## High-level architecture
 
@@ -20,6 +20,14 @@ This document is a high-level plan for Paradox Clock (PxC). It describes goals, 
   - `LedClock` — 4-digit 7-segment LED style (initial implementation requested).
   - `AnalogClock` — minute/second hands (inspiration from Houdini Clock).
   - `FlipClock`, `Hourglass` — stubs for future work.
+
+Naming convention for styles
+
+- Each clock style will have a stable, descriptive name used in `.ini` files and the UI. Example names:
+  - `antique-analog-oval-portrait` (the Houdini-style analog clock)
+  - `simple-4digit-landscape` (the first LED/countdown style we'll implement)
+
+Each style may provide multiple selectable assets (backgrounds, hands, digit graphics, fonts). The `.ini` for a style will pick which assets to use.
 
 - Utilities
   - `ini-loader` — parses `.ini` into a JS object with validation and defaults.
@@ -59,6 +67,10 @@ segment_width = 18
 
 The `ini-loader` will validate keys per `clock.type` and provide clear errors for missing assets or invalid values.
 
+Editing workflow
+
+- For the initial phase we'll edit `.ini` files manually. There will be example `.ini` files under `/config/examples` that document the available keys and sample asset choices. Building a web-based or GUI `.ini` editor is a future enhancement.
+
 ## Extension points
 
 - Add a new clock renderer under `/src/components/clocks`. It should accept a typed props object and register itself with the shell (or be referenced by a factory mapping in `ClockShell`).
@@ -71,6 +83,10 @@ The `ini-loader` will validate keys per `clock.type` and provide clear errors fo
   - `npm run build` — production build
   - `npm run test` — unit tests for utils and renderers
 
+Git remotes
+
+- The repository currently has a GitHub remote created with `gh` using HTTPS. You prefer SSH for GitHub pushes; we can switch `origin` to an SSH URL later — I'll do that only if you confirm you'd like SSH remotes, since the current HTTPS origin is working and `gh` created the repo.
+
 ## Initial implementation workstream
 
 1. Move older Houdini Clock content into `/archive` (done).
@@ -80,12 +96,15 @@ The `ini-loader` will validate keys per `clock.type` and provide clear errors fo
 
 ## Open questions (please answer to guide the next pass)
 
-1. Preferred default display modes: should `PxC` focus on `countdown` only, or support both `countdown` and real-time clocks from the start?
-2. How do you want to manage assets for different clock types? (store in `/public/assets/<clock-name>/` or a single shared assets folder?)
-3. Should the `.ini` editor be built into the app (web UI) or as a separate CLI/editor tool?
-4. Do you prefer SSH or HTTPS remotes for GitHub pushes? (I created the GitHub remote as HTTPS — I can switch to SSH if you prefer.)
-5. Which browser/device types are primary (kiosk displays, browsers on desktops, mobile)? This affects responsive layout choices.
+The clarifications below have been recorded and incorporated into the spec. They resolve the initial open questions:
+
+1. PxC will focus on configurable countdown displays, but must also support realtime clock and stopwatch modes.
+2. Each style will have its own `<clock-name>` namespace (e.g. `antique-analog-oval-portrait`, `simple-4digit-landscape`). Each style may expose multiple backgrounds, hands, digit sets, and fonts; the `.ini` will select the desired assets.
+3. For now, `.ini` files will be edited manually. We'll provide examples and documentation under `/config/examples` and `/docs` to guide authors.
+4. You prefer SSH for GitHub pushes. I will switch the `origin` remote to SSH only if you ask me to (it's currently set to HTTPS and working).
+5. Primary targets are full-screen standard displays (kiosk/large screens) in both landscape and portrait. The renderers should support rotations of 0, 90, 180 and 270 degrees (equivalently -90).
 
 ---
 
 This is a first-pass spec. Once you answer the open questions I will expand this document with concrete data shapes, component contracts, example `.ini` files, and a minimal test plan.
+
