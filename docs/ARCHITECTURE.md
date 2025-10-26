@@ -134,6 +134,15 @@ The build system will automatically include only the `FlipClock` component and i
 - The built app is a self-contained static bundle with no server-side dependencies.
 - MQTT is optional; clocks can run standalone in countdown/clock/stopwatch mode without external services.
 
+## Testing
+
+PxC's architecture requires a tailored testing strategy that validates:
+- Build-time transformations (INI parsing, config validation)
+- Pluggable renderer behavior (each clock style in isolation)
+- Integration points (ClockShell, MQTT, time services)
+
+See `/docs/TESTING.md` for the complete testing strategy, including what to test, when to write tests, and how to integrate testing into the development workflow.
+
 ## Future enhancements
 
 - **Web-based config editor**: A GUI tool for editing `.ini` files and previewing changes in real time.
