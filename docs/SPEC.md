@@ -119,6 +119,9 @@ Common sections
 | [mqtt] | (see `config/clock.ini`) | section | MQTT/telemetry settings (hostname, port, topics, auth). These are the same settings used by the original Houdini Clock and reused here. |
 | [display] | orientation | int (0,90,180,270) | Rotation to apply to the entire display. |
 | [display] | fade_duration_ms | int | Fade animation duration in milliseconds when switching states. |
+| [display] | fade_background_type | enum | Type of fade background: `color` or `image`. Default: `color`. |
+| [display] | fade_background_color | hex | Background color when faded out (e.g. `#000000` for black). Only used if `fade_background_type=color`. Default: `#000000`. |
+| [display] | fade_background_image | path | Path to background image shown when faded out. Only used if `fade_background_type=image`. |
 | [type] | style | string | Clock style identifier (e.g. `antique-analog-oval-portrait`, `simple-4digit-landscape`). |
 | [type] | mode | string | mode for this clock instance: `countdown`, `clock`, or `stopwatch`. |
 
