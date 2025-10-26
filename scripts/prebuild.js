@@ -98,7 +98,7 @@ if (!validModes.includes(rawConfig.type.mode)) {
 // Validate style-specific section exists
 const style = rawConfig.type.style;
 const styleSection = style.includes('analog') ? 'analog' :
-                     style.includes('led') ? 'led4' :
+                     style.includes('led') || style.includes('digit') ? 'led' :
                      style.includes('flip') ? 'flip' :
                      style.includes('font') ? 'font' :
                      style.includes('graphic') ? 'graphic' : null;
@@ -130,6 +130,9 @@ if (styleSection === 'analog') {
   if (rawConfig.analog['hint.font.path']) {
     validateAsset(rawConfig.analog['hint.font.path'], 'analog', 'hint.font.path');
   }
+} else if (styleSection === 'led') {
+  // LED clocks use fonts but they're optional (can use system defaults)
+  console.log(`[prebuild] LED clock detected - minimal validation`);
 }
 
 // Validate display fade background image if specified

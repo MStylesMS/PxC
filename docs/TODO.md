@@ -3,6 +3,7 @@
 ## Features to Add
 
 - [ ] LED 4-Digit Clock style implementation
+- [ ] Add the ability to change text color via MQTT
 - [ ] Flip clock style implementation
 - [ ] Font-based clock style implementation
 - [ ] Graphic clock style implementation
