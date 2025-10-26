@@ -1,0 +1,10 @@
+.hint-overlay {
+  z-index: 100;
+  user-select: none;
+}
+
+.hint-text {
+  /* Match original Houdini Clock text shadow */
+  text-shadow: 10px 10px 15px rgba(0, 0, 0, 0.9);
+  word-wrap: break-word;
+}

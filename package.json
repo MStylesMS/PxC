@@ -1,0 +1,64 @@
+{
+  "name": "pxc",
+  "version": "0.1.0",
+  "description": "Paradox Clock (PxC) - Framework for creating optimized, configuration-driven clock applications",
+  "private": true,
+  "keywords": [
+    "escape-room",
+    "countdown-clock",
+    "mqtt",
+    "react",
+    "clock-framework",
+    "paradox"
+  ],
+  "author": "Paradox Escape Rooms",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:MStylesMS/PxC.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MStylesMS/PxC/issues"
+  },
+  "homepage": ".",
+  "dependencies": {
+    "paho-mqtt": "^1.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "ini": "^4.1.0"
+  },
+  "scripts": {
+    "prebuild": "node scripts/prebuild.js",
+    "start": "npm run prebuild && react-scripts start",
+    "build": "npm run prebuild && react-scripts build",
+    "test": "react-scripts test",
+    "test:watch": "react-scripts test --watch",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:configs": "react-scripts test test/validate-configs.test.js --watchAll=false"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
