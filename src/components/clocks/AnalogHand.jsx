@@ -11,14 +11,18 @@ import './AnalogHand.css';
 const AnalogHand = ({ 
   imagePath, 
   rotation, 
-  originX, 
-  originY,
+  left,
+  top,
+  transformOrigin,
   adjusting = false,
   alt = 'clock hand'
 }) => {
   const style = {
+    position: 'absolute',
+    left: `${left}px`,
+    top: `${top}px`,
     transform: `rotate(${rotation}deg)`,
-    transformOrigin: `${originX} ${originY}`,
+    transformOrigin,
     transition: adjusting ? 'transform 0.8s ease-out' : 'none',
   };
 

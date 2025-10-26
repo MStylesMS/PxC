@@ -10,7 +10,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import FadeWrapper from './FadeWrapper';
-import HintOverlay from './HintOverlay';
 import AnalogClock from './clocks/AnalogClock';
 import { CountdownTimer } from '../utils/time-service';
 import MQTTClient from '../utils/mqtt-client';
@@ -73,7 +72,7 @@ const ClockShell = ({ config }) => {
     try {
       const mqtt = new MQTTClient(config);
       mqttRef.current = mqtt;
-      
+
       mqtt.connect();
 
       // Subscribe to commands
@@ -82,17 +81,45 @@ const ClockShell = ({ config }) => {
           const cmd = JSON.parse(msg.payload);
           console.log('[ClockShell] Received command:', cmd);
 
-          // Handle commands
-          if (cmd.command === 'start' && cmd.time) {
-            handleStart(cmd.time);
+          // Handle commands (support Houdini Clock API + legacy)
+          if (cmd.command === 'start') {
+            if (cmd.time) {
+              handleStart(cmd.time);
+            } else if (typeof cmd.seconds === 'number') {
+              handleSetSeconds(cmd.seconds);
+              timerRef.current.start();
+              setActive(true);
+              setVisible(true);
+            } else {
+              // Start with current time if already set
+              timerRef.current.start();
+              setActive(true);
+              setVisible(true);
+            }
           } else if (cmd.command === 'pause') {
             handlePause();
           } else if (cmd.command === 'resume') {
             handleResume();
-          } else if (cmd.command === 'setTime' && cmd.time) {
-            handleSetTime(cmd.time);
+          } else if (cmd.command === 'setTime') {
+            if (cmd.time) {
+              handleSetTime(cmd.time);
+            } else if (typeof cmd.seconds === 'number') {
+              handleSetSeconds(cmd.seconds);
+            }
+          } else if (cmd.command === 'setSeconds' && typeof cmd.seconds === 'number') {
+            handleSetSeconds(cmd.seconds);
           } else if (cmd.command === 'clear') {
             handleClear();
+          } else if (cmd.command === 'show' || cmd.command === 'fadeIn') {
+            setVisible(true);
+            if (mqttRef.current) {
+              mqttRef.current.publishEvent('command_received', { command: 'show' });
+            }
+          } else if (cmd.command === 'hide' || cmd.command === 'fadeOut' || cmd.command === 'fadeout') {
+            setVisible(false);
+            if (mqttRef.current) {
+              mqttRef.current.publishEvent('command_received', { command: 'hide' });
+            }
           } else if (cmd.hint !== undefined) {
             handleHint(cmd.hint, cmd.duration);
           }
@@ -192,6 +219,31 @@ const ClockShell = ({ config }) => {
     }
   };
 
+  // New: set time from seconds number
+  const handleSetSeconds = (seconds) => {
+    try {
+      const mm = Math.floor(seconds / 60);
+      const ss = seconds % 60;
+      const timeStr = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+      timerRef.current.setTime(seconds);
+      setTime(seconds);
+
+      if (mqttRef.current) {
+        mqttRef.current.publishEvent('command_received', { command: 'setTime', seconds });
+        mqttRef.current.publishState({
+          state: active ? 'running' : 'paused',
+          time: timeStr,
+          seconds,
+        });
+      }
+    } catch (error) {
+      console.error('[ClockShell] SetSeconds failed:', error);
+      if (mqttRef.current) {
+        mqttRef.current.publishWarning('SetSeconds command failed', { error: error.message });
+      }
+    }
+  };
+
   const handleClear = () => {
     setVisible(false);
 
@@ -263,17 +315,11 @@ const ClockShell = ({ config }) => {
           time={time}
           active={active}
           visible={visible}
+          hintText={hintText}
+          hintDuration={hintDuration}
+          hintFont={hintConfig ? hintConfig.font : null}
         />
         
-        {hintConfig && (
-          <HintOverlay
-            text={hintText}
-            duration={hintDuration}
-            position={hintConfig.position}
-            font={hintConfig.font}
-            onExpire={() => setHintText('')}
-          />
-        )}
       </FadeWrapper>
     </div>
   );

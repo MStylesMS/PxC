@@ -42,12 +42,17 @@ export class MQTTClient {
    * Connect to MQTT broker
    */
   connect() {
-    const { host, port, topic } = this.config;
-    const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+  const { host, port, topic } = this.config;
+  const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 
-    console.log(`[MQTT] Connecting to ${host}:${port} with topic ${topic}`);
+  // Build explicit WebSocket URL (Paho supports url form)
+  const scheme = window?.location?.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${scheme}://${host}:${port}/`;
 
-    this.client = new Client(host, port, clientId);
+  console.log(`[MQTT] Connecting to ${url} with topic ${topic}`);
+
+  // Use URL-based constructor to avoid path/arg confusion
+  this.client = new Client(url, clientId);
 
     // Set up event handlers
     this.client.onConnectionLost = (response) => {
@@ -79,7 +84,8 @@ export class MQTTClient {
 
         // Subscribe to commands topic
         this.client.subscribe(`${topic}/commands`);
-        console.log(`[MQTT] Subscribed to ${topic}/commands`);
+        this.client.subscribe(`${topic}`);
+        console.log(`[MQTT] Subscribed to ${topic}/commands and ${topic}`);
       },
       onFailure: (error) => {
         console.error('[MQTT] Connection failed:', error.errorMessage);
@@ -117,11 +123,17 @@ export class MQTTClient {
    * @returns {Observable} Observable that emits matching messages
    */
   subscribe(subtopic) {
+    // For backward compatibility, if subscribing to 'commands', also accept base topic messages
+    if (subtopic === 'commands') {
+      const topicBase = this.config.topic;
+      const topicCmds = `${this.config.topic}/commands`;
+      return this.messages$.pipe(
+        filter(msg => msg.topic === topicCmds || msg.topic === topicBase)
+      );
+    }
+
     const fullTopic = `${this.config.topic}/${subtopic}`;
-    
-    return this.messages$.pipe(
-      filter(msg => msg.topic === fullTopic)
-    );
+    return this.messages$.pipe(filter(msg => msg.topic === fullTopic));
   }
 
   /**
