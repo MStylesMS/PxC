@@ -108,3 +108,101 @@ The clarifications below have been recorded and incorporated into the spec. They
 
 This is a first-pass spec. Once you answer the open questions I will expand this document with concrete data shapes, component contracts, example `.ini` files, and a minimal test plan.
 
+## INI settings reference
+
+Below is a canonical reference for the `.ini` settings that PxC will support. The first table lists the common sections/keys that apply to most clock styles. After that are per-style tables with settings specific to that renderer.
+
+Common sections
+
+| Section | Key | Type | Description |
+|---|---:|---|---|
+| [mqtt] | (see `config/clock.ini`) | section | MQTT/telemetry settings (hostname, port, topics, auth). These are the same settings used by the original Houdini Clock and reused here. |
+| [display] | orientation | int (0,90,180,270) | Rotation to apply to the entire display. |
+| [display] | fade_duration_ms | int | Fade animation duration in milliseconds when switching states. |
+| [type] | style | string | Clock style identifier (e.g. `antique-analog-oval-portrait`, `simple-4digit-landscape`). |
+| [type] | mode | string | mode for this clock instance: `countdown`, `clock`, or `stopwatch`. |
+
+Notes: Many other keys are per-style and appear under section names that match the style (for example `[analog]`, `[led4]`, `[flip]`, `[font]`, `[graphic]`). Keys that reference assets should be paths relative to `/public/assets/<style>/` or absolute URLs.
+
+Analog style (`[analog]`)
+
+| Key | Type | Description |
+|---|---:|---|
+| background | path | Path to background image. |
+| minute_hand.path | path | Image for minute hand. |
+| minute_hand.origin_x | float | X (px or %) center of rotation within the image. |
+| minute_hand.origin_y | float | Y center of rotation. |
+| minute_hand.zero_rotation | float | Degrees for the zero (reference) rotation. |
+| minute_hand.direction | enum | `cw` or `ccw`. |
+| minute_hand.start_angle | float | Optional clamp/start angle. |
+| minute_hand.stop_angle | float | Optional clamp/stop angle. |
+| second_hand.* | ... | Same keys as minute_hand for the seconds hand. |
+| hint.x | int | Hint box top-left X. |
+| hint.y | int | Hint box top-left Y. |
+| hint.width | int | Hint box width. |
+| hint.height | int | Hint box height. |
+| hint.halign | enum | horizontal justification: `left`,`center`,`right`. |
+| hint.valign | enum | vertical justification: `top`,`middle`,`bottom`. |
+| hint.font.family | string | Font family for hint text. |
+| hint.font.size | int | Font size in px. |
+| hint.font.style | string | CSS font-style/weight. |
+| hint.font.color | hex | Text color. |
+| hint.font.alpha | float | Opacity (0.0 - 1.0). |
+
+Font style (`[font]`) — simple text-based clock
+
+| Key | Type | Description |
+|---|---:|---|
+| background | path | Path to background image. |
+| digits.x | int | Top-left X of the text box for digits. |
+| digits.y | int | Top-left Y of the text box for digits. |
+| digits.width | int | Width of the text box. |
+| digits.height | int | Height of the text box. |
+| digits.halign | enum | `left`,`center`,`right`. |
+| digits.valign | enum | `top`,`middle`,`bottom`. |
+| digits.font.* | ... | Font family/size/style/color/alpha as per hint font above. |
+| hint.* | ... | Same hint box keys as analog. |
+
+4-digit style (`[led4]`) — image based digital clock
+
+| Key | Type | Description |
+|---|---:|---|
+| background | path | Path to background image. |
+| digits.dir | path | Directory containing digit images (0-9). Can include GIFs for animated digits. |
+| digits.bg_transparent | bool | Whether digit image backgrounds are considered transparent. |
+| digit[0-3].x | int | Top-left X for digit N (0..3). |
+| digit[0-3].y | int | Top-left Y for digit N. |
+| digit[0-3].width | int | Width for digit N. |
+| digit[0-3].height | int | Height for digit N. |
+| digit[0-3].halign | enum | `left`,`center`,`right`. |
+| digit[0-3].valign | enum | `top`,`middle`,`bottom`. |
+| hint.* | ... | Same hint box keys as analog.
+
+Flip style (`[flip]`) — image based split-flip digits
+
+| Key | Type | Description |
+|---|---:|---|
+| background | path | Path to background image. |
+| digits.dir | path | Directory containing digit images (0-9). |
+| flip.style | enum | `one-piece` or `two-piece`. |
+| flip.direction | enum | `left`,`right`,`up`,`down`. |
+| digit[0-3].* | ... | Digit location keys identical to `[led4]` for each digit. |
+| hint.* | ... | Same hint box keys as analog.
+
+Graphic/video style (`[graphic]`) — video/timeline-driven frames
+
+| Key | Type | Description |
+|---|---:|---|
+| background | path | Static background (optional). |
+| video.path | path | Path to video file. |
+| video.frame_map | string | Mapping method: frame-per-second or timestamp mapping; implementation-specific. |
+| video.digit[0-3].x | int | Top-left X for video frame region that supplies digit N. |
+| video.digit[0-3].y | int | Top-left Y for region. |
+| video.digit[0-3].width | int | Width of region. |
+| video.digit[0-3].height | int | Height of region. |
+| hint.* | ... | Same hint box keys as analog.
+
+Example usage
+
+An example `config/examples/simple-4digit-landscape.ini` will demonstrate the `[display]`, `[type]`, `[led4]` and `[mqtt]` sections with concrete file paths and values.
+
