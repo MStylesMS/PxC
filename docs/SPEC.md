@@ -43,7 +43,7 @@ Each style may provide multiple selectable assets (backgrounds, hands, digit gra
     - `ConfigEditor.jsx` — optional UI to edit `.ini` and preview
   - `/utils` — `ini-loader.js`, `asset-loader.js`, `time-service.js`
 - `/config` — example `.ini` files for authors
-- `/public/assets` — images/fonts for clocks
+- `/assets` — images/fonts for clocks (organized by style, e.g. `/assets/houdini`)
 - `/docs` — design docs and authoring guidelines (this file lives here)
 
 ## Configuration model (.ini)
@@ -122,7 +122,7 @@ Common sections
 | [type] | style | string | Clock style identifier (e.g. `antique-analog-oval-portrait`, `simple-4digit-landscape`). |
 | [type] | mode | string | mode for this clock instance: `countdown`, `clock`, or `stopwatch`. |
 
-Notes: Many other keys are per-style and appear under section names that match the style (for example `[analog]`, `[led4]`, `[flip]`, `[font]`, `[graphic]`). Keys that reference assets should be paths relative to `/public/assets/<style>/` or absolute URLs.
+Notes: Many other keys are per-style and appear under section names that match the style (for example `[analog]`, `[led4]`, `[flip]`, `[font]`, `[graphic]`). Keys that reference assets should be paths relative to `/assets/<style>/` or absolute URLs.
 
 Analog style (`[analog]`)
 
