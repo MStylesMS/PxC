@@ -13,7 +13,7 @@ import FadeWrapper from './FadeWrapper';
 import AnalogClock from './clocks/AnalogClock';
 import LedClock from './clocks/LedClock';
 import { CountdownTimer } from '../utils/time-service';
-import MQTTClient from '../utils/mqtt-client';
+import { MQTTClient } from '../utils/mqtt-client';
 import './ClockShell.css';
 
 const ClockShell = ({ config }) => {
@@ -122,7 +122,10 @@ const ClockShell = ({ config }) => {
             if (mqttRef.current) {
               mqttRef.current.publishEvent('command_received', { command: 'hide' });
             }
+          } else if (cmd.command === 'hint' && cmd.text) {
+            handleHint(cmd.text, cmd.duration);
           } else if (cmd.hint !== undefined) {
+            // Legacy format support
             handleHint(cmd.hint, cmd.duration);
           }
         } catch (error) {

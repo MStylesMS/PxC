@@ -32,9 +32,10 @@
 
 .led-clock-hint {
   font-family: 'TypewriterBold', monospace;
-  font-size: 2.8vw;
+  font-size: 3.5vw;
   color: #111;
   text-align: center;
+  line-height: 1.12;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
