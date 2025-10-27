@@ -38,6 +38,7 @@
     "prebuild": "node scripts/prebuild.js",
     "start": "npm run prebuild && react-scripts start",
     "build": "npm run prebuild && react-scripts build",
+    "build:simple-4-digit": "node scripts/prebuild.js config/simple-4-digit.ini && react-scripts build",
     "test": "react-scripts test",
     "test:watch": "react-scripts test --watch",
     "test:coverage": "react-scripts test --coverage --watchAll=false",

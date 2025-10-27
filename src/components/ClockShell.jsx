@@ -11,14 +11,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FadeWrapper from './FadeWrapper';
 import AnalogClock from './clocks/AnalogClock';
+import LedClock from './clocks/LedClock';
 import { CountdownTimer } from '../utils/time-service';
-import MQTTClient from '../utils/mqtt-client';
+import { MQTTClient } from '../utils/mqtt-client';
 import './ClockShell.css';
 
 const ClockShell = ({ config }) => {
   const [time, setTime] = useState(0);
   const [active, setActive] = useState(false);
-  const [visible, setVisible] = useState(false);
+  // LED clocks should be visible by default
+  const [visible, setVisible] = useState(config.type.style.includes('digit') || config.type.style.includes('led'));
   const [hintText, setHintText] = useState('');
   const [hintDuration, setHintDuration] = useState(15);
   
@@ -120,7 +122,10 @@ const ClockShell = ({ config }) => {
             if (mqttRef.current) {
               mqttRef.current.publishEvent('command_received', { command: 'hide' });
             }
+          } else if (cmd.command === 'hint' && cmd.text) {
+            handleHint(cmd.text, cmd.duration);
           } else if (cmd.hint !== undefined) {
+            // Legacy format support
             handleHint(cmd.hint, cmd.duration);
           }
         } catch (error) {
@@ -269,7 +274,7 @@ const ClockShell = ({ config }) => {
   // Select renderer based on style
   const rendererMap = {
     'antique-analog-oval-portrait': AnalogClock,
-    // Future renderers will be added here
+    'simple-4-digit': LedClock,
   };
 
   const Renderer = rendererMap[config.type.style];
@@ -301,26 +306,32 @@ const ClockShell = ({ config }) => {
     },
   } : null;
 
+  // LED clocks handle their own background, so don't wrap them
+  const useFadeWrapper = !config.type.style.includes('digit') && !config.type.style.includes('led');
+
   return (
     <div className="clock-shell">
-      <FadeWrapper
-        visible={visible}
-        duration={config.display.fade_duration_ms}
-        backgroundType={config.display.fade_background_type}
-        backgroundColor={config.display.fade_background_color}
-        backgroundImage={config.display.fade_background_image}
-      >
-        <Renderer
-          config={config}
-          time={time}
-          active={active}
+      {useFadeWrapper ? (
+        <FadeWrapper
           visible={visible}
-          hintText={hintText}
-          hintDuration={hintDuration}
-          hintFont={hintConfig ? hintConfig.font : null}
+          duration={config.display.fade_duration_ms}
+          backgroundType={config.display.fade_background_type}
+          backgroundColor={config.display.fade_background_color}
+          backgroundImage={config.display.fade_background_image}
+        >
+          <Renderer
+            time={time}
+            hint={hintText}
+            visible={visible}
+          />
+        </FadeWrapper>
+      ) : (
+        <Renderer
+          time={time}
+          hint={hintText}
+          visible={visible}
         />
-        
-      </FadeWrapper>
+      )}
     </div>
   );
 };

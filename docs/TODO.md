@@ -3,6 +3,9 @@
 ## Features to Add
 
 - [ ] LED 4-Digit Clock style implementation
+- [ ] Add in the {"time":MM:SS} MQTT option for setting time
+- [ ] Make the MQTT appear in a mqtt.ini file in the build directory so it can be changed easily, along with a simple README.me.
+- [ ] Add the ability to change text color via MQTT
 - [ ] Flip clock style implementation
 - [ ] Font-based clock style implementation
 - [ ] Graphic clock style implementation
