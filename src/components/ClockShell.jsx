@@ -101,7 +101,7 @@ const ClockShell = ({ config }) => {
           } else if (cmd.command === 'pause') {
             handlePause();
           } else if (cmd.command === 'resume') {
-            handleResume();
+            handleResume(cmd);
           } else if (cmd.command === 'setTime') {
             if (cmd.time) {
               handleSetTime(cmd.time);
@@ -186,9 +186,17 @@ const ClockShell = ({ config }) => {
     }
   };
 
-  const handleResume = () => {
+  const handleResume = (cmd = {}) => {
+    // If time is provided, set it before resuming
+    if (cmd.time) {
+      handleSetTime(cmd.time);
+    } else if (typeof cmd.seconds === 'number') {
+      handleSetSeconds(cmd.seconds);
+    }
+
     timerRef.current.resume();
     setActive(true);
+    setVisible(true); // Ensure clock is visible on resume
 
     if (mqttRef.current) {
       mqttRef.current.publishEvent('command_received', { command: 'resume' });
