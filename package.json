@@ -1,6 +1,6 @@
 {
   "name": "pxc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Paradox Clock (PxC) - Framework for creating optimized, configuration-driven clock applications",
   "private": true,
   "keywords": [

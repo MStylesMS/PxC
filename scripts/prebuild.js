@@ -194,8 +194,28 @@ export default config;
 
 fs.writeFileSync(outputPath, jsContent, 'utf-8');
 
+// Also generate public/config.json for runtime editing
+// Only include editable fields (exclude type.style and type.mode which require rebuild)
+console.log(`[prebuild] Generating public/config.json for runtime use`);
+const publicConfigPath = path.resolve(ROOT_DIR, 'public/config.json');
+const publicConfigDir = path.dirname(publicConfigPath);
+
+if (!fs.existsSync(publicConfigDir)) {
+  fs.mkdirSync(publicConfigDir, { recursive: true });
+}
+
+// Create runtime config with only editable fields
+const runtimeConfig = {
+  mqtt: config.mqtt,
+  display: config.display,
+  [styleSection]: config[styleSection],
+};
+
+fs.writeFileSync(publicConfigPath, JSON.stringify(runtimeConfig, null, 2), 'utf-8');
+
 console.log(`[prebuild] ✓ Generated config from ${configFile}`);
 console.log(`[prebuild] ✓ Style: ${config.type.style}`);
 console.log(`[prebuild] ✓ Mode: ${config.type.mode}`);
 console.log(`[prebuild] ✓ MQTT: ${config.mqtt ? 'enabled' : 'disabled'}`);
+console.log(`[prebuild] ✓ Runtime config: public/config.json (will be copied to build/config.json)`);
 console.log(`[prebuild] ✓ Ready to build`);
