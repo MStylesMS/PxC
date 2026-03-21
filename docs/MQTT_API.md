@@ -311,6 +311,59 @@ Immediately removes the current hint overlay without affecting the clock display
 - Publishes a `command_received` event with `{"command": "clearHint"}`
 - Does **not** hide the clock or affect the countdown
 
+## 6. Display Color Commands
+
+### Set Display Colors
+Updates LED clock background and text color at runtime.
+
+```json
+{
+  "command": "setDisplayColors",
+  "backgroundColor": "navy",
+  "textColor": "#ffcc00",
+  "textAlpha": 0.6,
+  "fadeTime": 1.5
+}
+```
+
+**Parameters**:
+- `backgroundColor` (optional): Named color or hex (`#RGB`/`#RRGGBB`)
+- `textColor` (optional): Named color or hex (`#RGB`/`#RRGGBB`)
+- `textAlpha` (optional): Text opacity from `0.0` (fully transparent) to `1.0` (fully opaque)
+- `fadeTime` (optional): Transition time in seconds (supports fractional values like `1.5`). If omitted, change is instant.
+
+Named colors currently accepted:
+`black`, `white`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `orange`, `purple`, `pink`, `gray`, `silver`, `navy`, `teal`, `lime`
+
+**Examples**:
+```json
+{"command":"setDisplayColors","backgroundColor":"teal","textColor":"white","textAlpha":1}
+{"command":"setDisplayColors","backgroundColor":"#102A43","textColor":"#FEE440","textAlpha":0.25}
+{"command":"setDisplayColors","textColor":"cyan","textAlpha":0}
+{"command":"setDisplayColors","backgroundColor":"#0f0","textColor":"black"}
+{"command":"setDisplayColors","backgroundColor":"white","textColor":"black","textAlpha":0,"fadeTime":1}
+```
+
+**Behavior**:
+- Applies to LED/digit styles at runtime
+- `fadeTime` controls transition for background color, text color, and text alpha
+- When `fadeTime` is set, the renderer performs smooth interpolation updates (20Hz) across the interval
+- Publishes `display_colors_updated` event with effective values
+- Invalid fields are ignored and publish warnings; valid fields still apply
+
+### Reset Display Colors
+Restores runtime display colors to built-in defaults.
+
+```json
+{"command": "resetDisplayColors"}
+```
+
+**Behavior**:
+- Restores background to `white`
+- Restores text color to `black`
+- Resets text alpha to `1.0` (opaque)
+- Publishes `display_colors_updated` with `reset: true`
+
 ## Mode-Specific Behaviors
 
 ### Countdown Mode
@@ -403,7 +456,30 @@ mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
 # Clear hint immediately
 mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
   -m '{"command":"clearHint"}'
+
+# Set display colors (named + hex + alpha)
+mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
+  -m '{"command":"setDisplayColors","backgroundColor":"navy","textColor":"#ffcc00","textAlpha":0.6}'
+
+# Fade text to transparent over 1.5 seconds
+mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
+  -m '{"command":"setDisplayColors","backgroundColor":"white","textColor":"black","textAlpha":0,"fadeTime":1.5}'
+
+# Fade to black background and navy text over 2 seconds while text fades in
+mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
+  -m '{"command":"setDisplayColors","backgroundColor":"black","textColor":"navy","textAlpha":1,"fadeTime":2}'
+
+# Reset display colors to config defaults
+mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
+  -m '{"command":"resetDisplayColors"}'
 ```
+
+Manual sequence script:
+```bash
+./scripts/manual-color-cycle-sequence.sh agent22.local 1883 paradox/agent22/clock/commands
+```
+
+Current script profile: 23 seconds total (10s opaque color steps, 8s alpha ramp, then 3s fade-out + 2s fade-in).
 
 Monitor state:
 ```bash

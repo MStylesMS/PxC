@@ -4,7 +4,7 @@
 
 - [x] **`clearHint` MQTT command** - Dedicated command `{"command":"clearHint"}` to clear the hint text overlay without hiding the clock. Implemented in ClockShell.jsx.
 - [ ] Make the MQTT appear in a mqtt.ini file in the build directory so it can be changed easily, along with a simple README.me.
-- [ ] Add the ability to change text color via MQTT
+- [x] Add the ability to change text/background colors via MQTT (including text alpha)
 - [ ] Flip clock style implementation
 - [ ] Font-based clock style implementation
 - [ ] Graphic clock style implementation
@@ -14,6 +14,7 @@
 - [ ] Multi-config build pipeline (build all .ini files in CI)
 - [ ] Visual regression tests (Playwright screenshot comparison)
 - [ ] Runtime config switching via query param (dev mode)
+- [x] Add manual MQTT color-cycle test script (`scripts/manual-color-cycle-sequence.sh`)
 
 ## Issues to Fix
 

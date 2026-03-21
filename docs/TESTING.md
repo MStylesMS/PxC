@@ -12,6 +12,13 @@ This document defines the testing strategy for PxC, including what to test, when
 4. **Mock external dependencies** — MQTT, timers, system time should be controllable in tests
 5. **Add tests incrementally** — Start with foundation, expand as features stabilize
 
+## Manual Smoke Scripts
+
+These scripts are useful for quick hardware-in-the-loop checks on deployed devices:
+
+- `scripts/manual-hint-pause-sequence.sh`: Validates hint timing across pause/resume behavior.
+- `scripts/manual-color-cycle-sequence.sh`: 23-second runtime display-color validation: 10s opaque color cycling, 8s alpha ramp (0→1), then 5s fade phase (3s text fade-out, 2s fade-in to background black + text navy) using `fadeTime`.
+
 ## Test Categories and Priorities
 
 ### Phase 1: Foundation (Implement FIRST)

@@ -16,6 +16,47 @@ import { CountdownTimer } from '../utils/time-service';
 import { MQTTClient } from '../utils/mqtt-client';
 import './ClockShell.css';
 
+const NAMED_COLORS = new Set([
+  'black', 'white', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta',
+  'orange', 'purple', 'pink', 'gray', 'silver', 'navy', 'teal', 'lime',
+]);
+
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const DEFAULT_DISPLAY_COLORS = {
+  backgroundColor: 'white',
+  textColor: 'black',
+  textAlpha: 1,
+  fadeTime: 0,
+};
+
+const normalizeColor = (value) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  if (NAMED_COLORS.has(lower)) return lower;
+  if (HEX_COLOR_RE.test(trimmed)) return trimmed;
+
+  return null;
+};
+
+const normalizeTextAlpha = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    return null;
+  }
+  return parsed;
+};
+
+const normalizeFadeTime = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null;
+  }
+  return parsed;
+};
+
 const ClockShell = ({ config }) => {
   const [time, setTime] = useState(0);
   const [active, setActive] = useState(false);
@@ -23,6 +64,7 @@ const ClockShell = ({ config }) => {
   const [visible, setVisible] = useState(config.type.style.includes('digit') || config.type.style.includes('led'));
   const [hintText, setHintText] = useState('');
   const [hintDuration, setHintDuration] = useState(15);
+  const [displayColors, setDisplayColors] = useState(() => ({ ...DEFAULT_DISPLAY_COLORS }));
 
   const timerRef = useRef(null);
   const mqttRef = useRef(null);
@@ -30,6 +72,7 @@ const ClockShell = ({ config }) => {
   const hintStartedAtRef = useRef(0);
   const hintRemainingMsRef = useRef(0);
   const hintTextRef = useRef('');
+  const displayColorsRef = useRef(displayColors);
 
   const clearHintTimer = () => {
     if (hintTimeoutRef.current) {
@@ -74,6 +117,10 @@ const ClockShell = ({ config }) => {
   useEffect(() => {
     hintTextRef.current = hintText;
   }, [hintText]);
+
+  useEffect(() => {
+    displayColorsRef.current = displayColors;
+  }, [displayColors]);
 
   // Initialize timer
   useEffect(() => {
@@ -179,6 +226,10 @@ const ClockShell = ({ config }) => {
             if (mqttRef.current) {
               mqttRef.current.publishEvent('command_received', { command: 'clearHint' });
             }
+          } else if (cmd.command === 'setDisplayColors') {
+            handleSetDisplayColors(cmd);
+          } else if (cmd.command === 'resetDisplayColors') {
+            handleResetDisplayColors();
           } else if (cmd.command === 'hint' && cmd.text) {
             handleHint(cmd.text, cmd.duration);
           } else if (cmd.hint !== undefined) {
@@ -361,6 +412,86 @@ const ClockShell = ({ config }) => {
     console.warn('[ClockShell] handleHint: text=', JSON.stringify(normalizedText), 'duration=', normalizedDuration);
   };
 
+  const handleSetDisplayColors = (cmd = {}) => {
+    const base = { ...displayColorsRef.current };
+
+    const updates = {};
+    const warnings = [];
+
+    // Default behavior when fadeTime is omitted: instant change.
+    updates.fadeTime = 0;
+
+    if (Object.prototype.hasOwnProperty.call(cmd, 'backgroundColor')) {
+      const normalizedBackground = normalizeColor(cmd.backgroundColor);
+      if (normalizedBackground) {
+        updates.backgroundColor = normalizedBackground;
+      } else {
+        warnings.push(`Invalid backgroundColor: ${JSON.stringify(cmd.backgroundColor)}`);
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(cmd, 'textColor')) {
+      const normalizedTextColor = normalizeColor(cmd.textColor);
+      if (normalizedTextColor) {
+        updates.textColor = normalizedTextColor;
+      } else {
+        warnings.push(`Invalid textColor: ${JSON.stringify(cmd.textColor)}`);
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(cmd, 'textAlpha')) {
+      const normalizedAlpha = normalizeTextAlpha(cmd.textAlpha);
+      if (normalizedAlpha !== null) {
+        updates.textAlpha = normalizedAlpha;
+      } else {
+        warnings.push(`Invalid textAlpha: ${JSON.stringify(cmd.textAlpha)} (expected 0.0..1.0)`);
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(cmd, 'fadeTime')) {
+      const normalizedFade = normalizeFadeTime(cmd.fadeTime);
+      if (normalizedFade !== null) {
+        updates.fadeTime = normalizedFade;
+      } else {
+        warnings.push(`Invalid fadeTime: ${JSON.stringify(cmd.fadeTime)} (expected >= 0 seconds)`);
+      }
+    }
+
+    if (!Object.keys(updates).length) {
+      warnings.push('setDisplayColors command had no valid fields to apply');
+    }
+
+    const next = { ...base, ...updates };
+    setDisplayColors(next);
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'setDisplayColors' });
+      mqttRef.current.publishEvent('display_colors_updated', {
+        backgroundColor: next.backgroundColor,
+        textColor: next.textColor,
+        textAlpha: next.textAlpha,
+        fadeTime: next.fadeTime,
+      });
+      warnings.forEach((warning) => mqttRef.current.publishWarning(warning, { command: 'setDisplayColors' }));
+    }
+  };
+
+  const handleResetDisplayColors = () => {
+    const reset = { ...DEFAULT_DISPLAY_COLORS };
+    setDisplayColors(reset);
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'resetDisplayColors' });
+      mqttRef.current.publishEvent('display_colors_updated', {
+        backgroundColor: reset.backgroundColor,
+        textColor: reset.textColor,
+        textAlpha: reset.textAlpha,
+        fadeTime: reset.fadeTime,
+        reset: true,
+      });
+    }
+  };
+
   // Select renderer based on style
   const rendererMap = {
     'antique-analog-oval-portrait': AnalogClock,
@@ -415,6 +546,7 @@ const ClockShell = ({ config }) => {
             hintText={hintText}
             hintDuration={hintDuration}
             hintFont={hintConfig?.font}
+            displayColors={displayColors}
             visible={visible}
           />
         </FadeWrapper>
@@ -425,6 +557,7 @@ const ClockShell = ({ config }) => {
           hintText={hintText}
           hintDuration={hintDuration}
           hintFont={hintConfig?.font}
+          displayColors={displayColors}
           visible={visible}
         />
       )}
