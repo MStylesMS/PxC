@@ -23,17 +23,65 @@ const ClockShell = ({ config }) => {
   const [visible, setVisible] = useState(config.type.style.includes('digit') || config.type.style.includes('led'));
   const [hintText, setHintText] = useState('');
   const [hintDuration, setHintDuration] = useState(15);
-  
+
   const timerRef = useRef(null);
   const mqttRef = useRef(null);
+  const hintTimeoutRef = useRef(null);
+  const hintStartedAtRef = useRef(0);
+  const hintRemainingMsRef = useRef(0);
+  const hintTextRef = useRef('');
+
+  const clearHintTimer = () => {
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+      hintTimeoutRef.current = null;
+    }
+    hintStartedAtRef.current = 0;
+  };
+
+  const startHintTimer = (delayMs) => {
+    clearHintTimer();
+
+    if (!Number.isFinite(delayMs) || delayMs <= 0) {
+      hintRemainingMsRef.current = 0;
+      setHintText('');
+      return;
+    }
+
+    hintRemainingMsRef.current = delayMs;
+    hintStartedAtRef.current = Date.now();
+    hintTimeoutRef.current = setTimeout(() => {
+      hintTimeoutRef.current = null;
+      hintStartedAtRef.current = 0;
+      hintRemainingMsRef.current = 0;
+      setHintText('');
+    }, delayMs);
+  };
+
+  const clearHint = () => {
+    console.warn('[ClockShell] clearHint()');
+    clearHintTimer();
+    hintRemainingMsRef.current = 0;
+    setHintText('');
+  };
+
+  // Cleanup hint timer on unmount.
+  useEffect(() => {
+    return () => clearHintTimer();
+  }, []);
+
+  // Keep a live reference for command handlers invoked from long-lived subscriptions.
+  useEffect(() => {
+    hintTextRef.current = hintText;
+  }, [hintText]);
 
   // Initialize timer
   useEffect(() => {
     const timer = new CountdownTimer(0);
-    
+
     timer.on('tick', (seconds) => {
       setTime(seconds);
-      
+
       // Publish state update if MQTT is connected
       if (mqttRef.current && mqttRef.current.isConnected()) {
         mqttRef.current.publishState({
@@ -46,7 +94,8 @@ const ClockShell = ({ config }) => {
 
     timer.on('zero', () => {
       setActive(false);
-      
+      clearHint();
+
       if (mqttRef.current && mqttRef.current.isConnected()) {
         mqttRef.current.publishEvent('countdown_complete');
         mqttRef.current.publishState({
@@ -62,6 +111,8 @@ const ClockShell = ({ config }) => {
     return () => {
       timer.destroy();
     };
+    // Timer lifecycle is intentionally initialized once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Initialize MQTT (if configured)
@@ -118,9 +169,15 @@ const ClockShell = ({ config }) => {
               mqttRef.current.publishEvent('command_received', { command: 'show' });
             }
           } else if (cmd.command === 'hide' || cmd.command === 'fadeOut' || cmd.command === 'fadeout') {
+            clearHint();
             setVisible(false);
             if (mqttRef.current) {
               mqttRef.current.publishEvent('command_received', { command: 'hide' });
+            }
+          } else if (cmd.command === 'clearHint') {
+            clearHint();
+            if (mqttRef.current) {
+              mqttRef.current.publishEvent('command_received', { command: 'clearHint' });
             }
           } else if (cmd.command === 'hint' && cmd.text) {
             handleHint(cmd.text, cmd.duration);
@@ -149,7 +206,8 @@ const ClockShell = ({ config }) => {
     try {
       const [mm, ss] = timeStr.split(':').map(Number);
       const seconds = mm * 60 + ss;
-      
+      clearHint();
+
       timerRef.current.setTime(seconds);
       timerRef.current.start();
       setTime(seconds);
@@ -173,6 +231,12 @@ const ClockShell = ({ config }) => {
   };
 
   const handlePause = () => {
+    if (hintTextRef.current && hintTimeoutRef.current) {
+      const elapsedMs = Date.now() - hintStartedAtRef.current;
+      hintRemainingMsRef.current = Math.max(0, hintRemainingMsRef.current - elapsedMs);
+      clearHintTimer();
+    }
+
     timerRef.current.pause();
     setActive(false);
 
@@ -194,6 +258,10 @@ const ClockShell = ({ config }) => {
       handleSetSeconds(cmd.seconds);
     }
 
+    if (hintTextRef.current && hintRemainingMsRef.current > 0) {
+      startHintTimer(hintRemainingMsRef.current);
+    }
+
     timerRef.current.resume();
     setActive(true);
     setVisible(true); // Ensure clock is visible on resume
@@ -212,7 +280,7 @@ const ClockShell = ({ config }) => {
     try {
       const [mm, ss] = timeStr.split(':').map(Number);
       const seconds = mm * 60 + ss;
-      
+
       timerRef.current.setTime(seconds);
       setTime(seconds);
 
@@ -237,7 +305,7 @@ const ClockShell = ({ config }) => {
     try {
       const mm = Math.floor(seconds / 60);
       const ss = seconds % 60;
-      const timeStr = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+      const timeStr = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
       timerRef.current.setTime(seconds);
       setTime(seconds);
 
@@ -258,6 +326,7 @@ const ClockShell = ({ config }) => {
   };
 
   const handleClear = () => {
+    clearHint();
     setVisible(false);
 
     if (mqttRef.current) {
@@ -271,12 +340,25 @@ const ClockShell = ({ config }) => {
   };
 
   const handleHint = (text, duration = 15) => {
-    setHintText(text);
-    setHintDuration(duration);
+    const normalizedText = typeof text === 'string' ? text.trim() : '';
+    const parsedDuration = Number(duration);
+    const normalizedDuration = Number.isFinite(parsedDuration) && parsedDuration > 0
+      ? parsedDuration
+      : 15;
 
-    if (mqttRef.current && text) {
-      mqttRef.current.publishEvent('hint_displayed', { text, duration });
+    if (!normalizedText) {
+      clearHint();
+      return;
     }
+
+    setHintDuration(normalizedDuration);
+    setHintText(normalizedText);
+    startHintTimer(normalizedDuration * 1000);
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('hint_displayed', { text: normalizedText, duration: normalizedDuration });
+    }
+    console.warn('[ClockShell] handleHint: text=', JSON.stringify(normalizedText), 'duration=', normalizedDuration);
   };
 
   // Select renderer based on style
@@ -330,6 +412,9 @@ const ClockShell = ({ config }) => {
           <Renderer
             time={time}
             hint={hintText}
+            hintText={hintText}
+            hintDuration={hintDuration}
+            hintFont={hintConfig?.font}
             visible={visible}
           />
         </FadeWrapper>
@@ -337,6 +422,9 @@ const ClockShell = ({ config }) => {
         <Renderer
           time={time}
           hint={hintText}
+          hintText={hintText}
+          hintDuration={hintDuration}
+          hintFont={hintConfig?.font}
           visible={visible}
         />
       )}

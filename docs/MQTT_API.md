@@ -271,33 +271,45 @@ Request an immediate state publish.
 ### Display Hint
 Shows a text hint overlay on the clock display.
 
+Two equivalent formats are accepted:
+
+```json
+{"command": "hint", "text": "Your hint text here", "duration": 10}
+```
 ```json
 {"hint": "Your hint text here", "duration": 10}
 ```
 
 **Parameters**:
-- `hint`: Text to display (required)
-- `duration`: Display duration in seconds (optional, default from `.ini` `hint_duration_default`)
+- `text` / `hint`: Text to display (required)
+- `duration`: Display duration in seconds (optional, default from `.ini` `hint_duration_default`). Supports large values (e.g. `3600` for one hour).
 
 **Examples**:
 ```json
-{"hint": "Check the manual", "duration": 8}
-{"hint": "Time is running out!"}  // Uses default duration
+{"command": "hint", "text": "Check the manual", "duration": 8}
+{"command": "hint", "text": "Time is running out!"}  
 {"hint": "Look behind you", "duration": 5}
 ```
 
 **Behavior**:
 - Text appears as overlay (position/style defined in `.ini`)
-- Automatically fades out after duration
-- New hints replace existing ones
+- Automatically removed after `duration` seconds
+- Sending a new hint while one is displayed replaces it immediately and resets the timer
+- `clearHint` (see below) removes it early; `hide` and `clear` also remove it as a side-effect
 - Available in all modes
 
 ### Clear Hint
-Immediately removes the current hint overlay.
+Immediately removes the current hint overlay without affecting the clock display or timer state.
 
 ```json
 {"command": "clearHint"}
 ```
+
+**Behavior**:
+- Cancels the expiry timer for the current hint
+- Has no effect if no hint is currently displayed
+- Publishes a `command_received` event with `{"command": "clearHint"}`
+- Does **not** hide the clock or affect the countdown
 
 ## Mode-Specific Behaviors
 
@@ -386,7 +398,11 @@ mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
 
 # Display hint
 mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
-  -m '{"hint":"Test hint message","duration":5}'
+  -m '{"command":"hint","text":"Test hint message","duration":5}'
+
+# Clear hint immediately
+mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
+  -m '{"command":"clearHint"}'
 ```
 
 Monitor state:
