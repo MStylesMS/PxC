@@ -42,17 +42,23 @@ export class MQTTClient {
    * Connect to MQTT broker
    */
   connect() {
-  const { host, port, topic } = this.config;
-  const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+    const { host, port, topic } = this.config;
+    const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 
-  // Build explicit WebSocket URL (Paho supports url form)
-  const scheme = window?.location?.protocol === 'https:' ? 'wss' : 'ws';
-  const url = `${scheme}://${host}:${port}/`;
+    // Prefer the page hostname so the same build works locally on the Pi and
+    // when opened from another machine. Keep the configured host only when it
+    // is explicit and not the legacy placeholder.
+    const pageHost = window?.location?.hostname || '127.0.0.1';
+    const brokerHost = !host || host === 'agent22.local' ? pageHost : host;
 
-  console.log(`[MQTT] Connecting to ${url} with topic ${topic}`);
+    // Build explicit WebSocket URL (Paho supports url form)
+    const scheme = window?.location?.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${scheme}://${brokerHost}:${port}/`;
 
-  // Use URL-based constructor to avoid path/arg confusion
-  this.client = new Client(url, clientId);
+    console.log(`[MQTT] Connecting to ${url} with topic ${topic}`);
+
+    // Use URL-based constructor to avoid path/arg confusion
+    this.client = new Client(url, clientId);
 
     // Set up event handlers
     this.client.onConnectionLost = (response) => {
