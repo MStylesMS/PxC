@@ -45,11 +45,11 @@ export class MQTTClient {
     const { host, port, topic } = this.config;
     const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 
-    // Prefer the page hostname so the same build works locally on the Pi and
-    // when opened from another machine. Keep the configured host only when it
-    // is explicit and not the legacy placeholder.
+    // When host is empty the clock auto-connects to the machine that served
+    // the page (i.e. the Nginx host running the MQTT broker).  An explicit
+    // non-empty host overrides this and is used as-is.
     const pageHost = window?.location?.hostname || '127.0.0.1';
-    const brokerHost = !host || host === 'agent22.local' ? pageHost : host;
+    const brokerHost = !host ? pageHost : host;
 
     // Build explicit WebSocket URL (Paho supports url form)
     const scheme = window?.location?.protocol === 'https:' ? 'wss' : 'ws';

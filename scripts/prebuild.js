@@ -37,7 +37,16 @@ if (!fs.existsSync(configPath)) {
 let rawConfig;
 try {
   const iniContent = fs.readFileSync(configPath, 'utf-8');
-  rawConfig = ini.parse(iniContent);
+
+  // The `ini` package v4 treats `#` as a comment character, which would silently
+  // discard bare hex colour values like `color = #ffffff`.  Pre-process the raw
+  // text to wrap any unquoted hex value in double-quotes so the parser keeps it.
+  const processedIniContent = iniContent.replace(
+    /^(\s*[^;#\n][^=\n]*=\s*)(#[0-9a-fA-F]{3,8})\s*$/gm,
+    (_, prefix, hex) => `${prefix}"${hex}"`
+  );
+
+  rawConfig = ini.parse(processedIniContent);
 } catch (error) {
   console.error(`[prebuild] ERROR: Failed to parse INI file: ${error.message}`);
   process.exit(1);
@@ -148,7 +157,7 @@ console.log(`[prebuild] Validation passed`);
 // Apply defaults and type coercion
 const config = {
   mqtt: rawConfig.mqtt ? {
-    host: rawConfig.mqtt.host || 'localhost',
+    host: rawConfig.mqtt.host || '',
     port: coerceNumber(rawConfig.mqtt.port, 1884),
     topic: rawConfig.mqtt.topic || 'paradox/clock',
     reconnect_interval: coerceNumber(rawConfig.mqtt.reconnect_interval, 5000),

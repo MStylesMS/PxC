@@ -198,6 +198,8 @@ const ClockShell = ({ config }) => {
             }
           } else if (cmd.command === 'pause') {
             handlePause();
+          } else if (cmd.command === 'stop') {
+            handleStop();
           } else if (cmd.command === 'resume') {
             handleResume(cmd);
           } else if (cmd.command === 'setTime') {
@@ -295,6 +297,21 @@ const ClockShell = ({ config }) => {
       mqttRef.current.publishEvent('command_received', { command: 'pause' });
       mqttRef.current.publishState({
         state: 'paused',
+        time: timerRef.current.formatTime(),
+        seconds: timerRef.current.getTime(),
+      });
+    }
+  };
+
+  const handleStop = () => {
+    clearHint();
+    timerRef.current.pause();
+    setActive(false);
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'stop' });
+      mqttRef.current.publishState({
+        state: 'stopped',
         time: timerRef.current.formatTime(),
         seconds: timerRef.current.getTime(),
       });
