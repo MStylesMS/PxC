@@ -1,6 +1,8 @@
 # Paradox Clock (PxC)
 
-A framework for creating optimized, configuration-driven clock applications. PxC enables rapid authoring of custom countdown, clock, and stopwatch displays through `.ini` configuration files, producing lean, production-ready React applications tailored to each specific use case.
+A framework for creating optimized, configuration-driven clock applications.
+
+**AI Documentation**: [AI-INSTRUCTIONS.md](AI-INSTRUCTIONS.md) (quick context) | [AI-DETAILED-OVERVIEW.md](AI-DETAILED-OVERVIEW.md) (comprehensive guide) PxC enables rapid authoring of custom countdown, clock, and stopwatch displays through `.ini` configuration files, producing lean, production-ready React applications tailored to each specific use case.
 
 ## What is PxC?
 
