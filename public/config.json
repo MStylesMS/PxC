@@ -2,21 +2,44 @@
   "mqtt": {
     "host": "",
     "port": 1884,
-    "topic": "paradox/agent22/clock",
+    "topic": "paradox/houdini/clock",
     "reconnect_interval": 5000,
     "keep_alive": 60
   },
   "display": {
-    "orientation": 0,
-    "fade_duration_ms": 600,
+    "orientation": -90,
+    "fade_duration_ms": 2000,
     "fade_background_type": "color",
-    "fade_background_color": "#b3e0ff",
+    "fade_background_color": "#000000",
     "fade_background_image": null
   },
-  "led": {
-    "time_font": "CursedTimer",
-    "hint_font": "TypewriterBold",
-    "background_color": "#b3e0ff",
-    "text_color": "#111111"
+  "analog": {
+    "background": "assets/houdini/bg.png",
+    "minute_hand.path": "assets/houdini/minute_hand_sm.png",
+    "minute_hand.origin_x": "20",
+    "minute_hand.origin_y": "440",
+    "minute_hand.zero_rotation": "-90",
+    "minute_hand.direction": "cw",
+    "minute_hand.start_angle": "0",
+    "minute_hand.stop_angle": "360",
+    "second_hand.path": "assets/houdini/seconds_hand_sm.png",
+    "second_hand.origin_x": "8",
+    "second_hand.origin_y": "360",
+    "second_hand.zero_rotation": "-90",
+    "second_hand.direction": "cw",
+    "second_hand.start_angle": "0",
+    "second_hand.stop_angle": "360",
+    "hint.x": "50",
+    "hint.y": "600",
+    "hint.width": "700",
+    "hint.height": "100",
+    "hint.halign": "center",
+    "hint.valign": "middle",
+    "hint.font.family": "Alger",
+    "hint.font.size": "48",
+    "hint.font.style": "normal",
+    "hint.font.color": "#ffffff",
+    "hint.font.alpha": "1.0",
+    "hint.font.path": "assets/houdini/alger.ttf"
   }
 }
