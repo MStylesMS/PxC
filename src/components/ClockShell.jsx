@@ -62,6 +62,9 @@ const ClockShell = ({ config }) => {
   const [active, setActive] = useState(false);
   // LED clocks should be visible by default
   const [visible, setVisible] = useState(config.type.style.includes('digit') || config.type.style.includes('led'));
+  const [visibilityLevel, setVisibilityLevel] = useState(
+    config.type.style.includes('digit') || config.type.style.includes('led') ? 1 : 0
+  );
   const [hintText, setHintText] = useState('');
   const [hintDuration, setHintDuration] = useState(15);
   const [displayColors, setDisplayColors] = useState(() => ({ ...DEFAULT_DISPLAY_COLORS }));
@@ -72,7 +75,50 @@ const ClockShell = ({ config }) => {
   const hintStartedAtRef = useRef(0);
   const hintRemainingMsRef = useRef(0);
   const hintTextRef = useRef('');
+  const activeRef = useRef(active);
+  const visibleRef = useRef(visible);
+  const visibilityLevelRef = useRef(visibilityLevel);
+  const timeRef = useRef(time);
   const displayColorsRef = useRef(displayColors);
+
+  const formatMMSS = (totalSeconds) => {
+    const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+    const mm = Math.floor(safeSeconds / 60);
+    const ss = safeSeconds % 60;
+    return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  };
+
+  const getDerivedClockState = () => {
+    if (activeRef.current) return 'running';
+    return timeRef.current > 0 ? 'paused' : 'stopped';
+  };
+
+  const getVisibilityFadeDurationMs = () => {
+    if (config.type.style.includes('digit') || config.type.style.includes('led')) {
+      return 600;
+    }
+
+    const parsed = Number(config.display.fade_duration_ms);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 2000;
+  };
+
+  const buildStatePayload = (overrides = {}) => ({
+    state: getDerivedClockState(),
+    time: timerRef.current ? timerRef.current.formatTime() : formatMMSS(timeRef.current),
+    seconds: timerRef.current ? timerRef.current.getTime() : timeRef.current,
+    visibility: visibilityLevelRef.current,
+    hint: hintTextRef.current,
+    ...overrides,
+  });
+
+  const publishCommandReceived = (command, data = {}, valid = true) => {
+    if (!mqttRef.current) return;
+    mqttRef.current.publishEvent('command_received', {
+      command,
+      valid,
+      ...data,
+    });
+  };
 
   const clearHintTimer = () => {
     if (hintTimeoutRef.current) {
@@ -119,6 +165,59 @@ const ClockShell = ({ config }) => {
   }, [hintText]);
 
   useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
+
+  useEffect(() => {
+    visibleRef.current = visible;
+  }, [visible]);
+
+  useEffect(() => {
+    visibilityLevelRef.current = visibilityLevel;
+  }, [visibilityLevel]);
+
+  useEffect(() => {
+    timeRef.current = time;
+  }, [time]);
+
+  // Track fade transitions and publish transitional visibility values (0.00..1.00).
+  useEffect(() => {
+    const target = visible ? 1 : 0;
+    const start = visibilityLevelRef.current;
+    const durationMs = getVisibilityFadeDurationMs();
+
+    if (durationMs <= 0 || start === target) {
+      if (start !== target) {
+        setVisibilityLevel(target);
+        if (mqttRef.current && mqttRef.current.isConnected()) {
+          mqttRef.current.publishState({ visibility: target });
+        }
+      }
+      return undefined;
+    }
+
+    const startedAt = Date.now();
+    const intervalId = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const t = Math.min(1, elapsed / durationMs);
+      const raw = start + ((target - start) * t);
+      const rounded = Math.round(raw * 100) / 100;
+
+      setVisibilityLevel(rounded);
+      if (mqttRef.current && mqttRef.current.isConnected()) {
+        mqttRef.current.publishState({ visibility: rounded });
+      }
+
+      if (t >= 1) {
+        clearInterval(intervalId);
+      }
+    }, 250);
+
+    return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, config.type.style, config.display.fade_duration_ms]);
+
+  useEffect(() => {
     displayColorsRef.current = displayColors;
   }, [displayColors]);
 
@@ -131,11 +230,11 @@ const ClockShell = ({ config }) => {
 
       // Publish state update if MQTT is connected
       if (mqttRef.current && mqttRef.current.isConnected()) {
-        mqttRef.current.publishState({
+        mqttRef.current.publishState(buildStatePayload({
           state: 'running',
           time: timer.formatTime(),
-          seconds: seconds,
-        });
+          seconds,
+        }));
       }
     });
 
@@ -145,11 +244,11 @@ const ClockShell = ({ config }) => {
 
       if (mqttRef.current && mqttRef.current.isConnected()) {
         mqttRef.current.publishEvent('countdown_complete');
-        mqttRef.current.publishState({
+        mqttRef.current.publishState(buildStatePayload({
           state: 'stopped',
           time: '00:00',
           seconds: 0,
-        });
+        }));
       }
     });
 
@@ -190,11 +289,23 @@ const ClockShell = ({ config }) => {
               timerRef.current.start();
               setActive(true);
               setVisible(true);
+              publishCommandReceived('start', { seconds: cmd.seconds });
+              mqttRef.current.publishState(buildStatePayload({
+                state: 'running',
+                seconds: cmd.seconds,
+                time: formatMMSS(cmd.seconds),
+                visibility: 1.0,
+              }));
             } else {
               // Start with current time if already set
               timerRef.current.start();
               setActive(true);
               setVisible(true);
+              publishCommandReceived('start');
+              mqttRef.current.publishState(buildStatePayload({
+                state: 'running',
+                visibility: 1.0,
+              }));
             }
           } else if (cmd.command === 'pause') {
             handlePause();
@@ -215,18 +326,21 @@ const ClockShell = ({ config }) => {
           } else if (cmd.command === 'show' || cmd.command === 'fadeIn') {
             setVisible(true);
             if (mqttRef.current) {
-              mqttRef.current.publishEvent('command_received', { command: 'show' });
+              publishCommandReceived('show');
+              mqttRef.current.publishState(buildStatePayload({ visibility: 1.0 }));
             }
           } else if (cmd.command === 'hide' || cmd.command === 'fadeOut' || cmd.command === 'fadeout') {
             clearHint();
             setVisible(false);
             if (mqttRef.current) {
-              mqttRef.current.publishEvent('command_received', { command: 'hide' });
+              publishCommandReceived('hide');
+              mqttRef.current.publishState(buildStatePayload({ visibility: 0.0 }));
             }
           } else if (cmd.command === 'clearHint') {
             clearHint();
             if (mqttRef.current) {
-              mqttRef.current.publishEvent('command_received', { command: 'clearHint' });
+              publishCommandReceived('clearHint');
+              mqttRef.current.publishState(buildStatePayload({ hint: '' }));
             }
           } else if (cmd.command === 'setDisplayColors') {
             handleSetDisplayColors(cmd);
@@ -237,10 +351,21 @@ const ClockShell = ({ config }) => {
           } else if (cmd.hint !== undefined) {
             // Legacy format support
             handleHint(cmd.hint, cmd.duration);
+          } else {
+            const unknownCommand = typeof cmd.command === 'string' ? cmd.command : '(missing command)';
+            if (mqttRef.current) {
+              mqttRef.current.publishWarning('Unknown command', { command: unknownCommand, payload: cmd });
+              publishCommandReceived(unknownCommand, { payload: cmd }, false);
+            }
           }
         } catch (error) {
           console.error('[ClockShell] Failed to parse command:', error);
           mqtt.publishWarning('Malformed command', { error: error.message });
+          mqtt.publishEvent('command_received', {
+            command: '(malformed)',
+            valid: false,
+            error: error.message,
+          });
         }
       });
 
@@ -253,6 +378,23 @@ const ClockShell = ({ config }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
+
+  // Publish periodic heartbeat state summary on /state.
+  useEffect(() => {
+    if (!config.mqtt) return;
+
+    const parsedHeartbeat = Number(config.mqtt.heartbeat_ms);
+    const heartbeatMs = Number.isFinite(parsedHeartbeat) && parsedHeartbeat > 0 ? parsedHeartbeat : 5000;
+
+    const intervalId = setInterval(() => {
+      if (mqttRef.current && mqttRef.current.isConnected()) {
+        mqttRef.current.publishState(buildStatePayload());
+      }
+    }, heartbeatMs);
+
+    return () => clearInterval(intervalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.mqtt]);
 
   // Command handlers
   const handleStart = (timeStr) => {
@@ -268,12 +410,13 @@ const ClockShell = ({ config }) => {
       setVisible(true);
 
       if (mqttRef.current) {
-        mqttRef.current.publishEvent('command_received', { command: 'start', time: timeStr });
-        mqttRef.current.publishState({
+        publishCommandReceived('start', { time: timeStr });
+        mqttRef.current.publishState(buildStatePayload({
           state: 'running',
           time: timeStr,
-          seconds: seconds,
-        });
+          seconds,
+          visibility: 1.0,
+        }));
       }
     } catch (error) {
       console.error('[ClockShell] Start failed:', error);
@@ -294,12 +437,12 @@ const ClockShell = ({ config }) => {
     setActive(false);
 
     if (mqttRef.current) {
-      mqttRef.current.publishEvent('command_received', { command: 'pause' });
-      mqttRef.current.publishState({
+      publishCommandReceived('pause');
+      mqttRef.current.publishState(buildStatePayload({
         state: 'paused',
         time: timerRef.current.formatTime(),
         seconds: timerRef.current.getTime(),
-      });
+      }));
     }
   };
 
@@ -309,12 +452,12 @@ const ClockShell = ({ config }) => {
     setActive(false);
 
     if (mqttRef.current) {
-      mqttRef.current.publishEvent('command_received', { command: 'stop' });
-      mqttRef.current.publishState({
+      publishCommandReceived('stop');
+      mqttRef.current.publishState(buildStatePayload({
         state: 'stopped',
         time: timerRef.current.formatTime(),
         seconds: timerRef.current.getTime(),
-      });
+      }));
     }
   };
 
@@ -335,12 +478,13 @@ const ClockShell = ({ config }) => {
     setVisible(true); // Ensure clock is visible on resume
 
     if (mqttRef.current) {
-      mqttRef.current.publishEvent('command_received', { command: 'resume' });
-      mqttRef.current.publishState({
+      publishCommandReceived('resume');
+      mqttRef.current.publishState(buildStatePayload({
         state: 'running',
         time: timerRef.current.formatTime(),
         seconds: timerRef.current.getTime(),
-      });
+        visibility: 1.0,
+      }));
     }
   };
 
@@ -353,12 +497,12 @@ const ClockShell = ({ config }) => {
       setTime(seconds);
 
       if (mqttRef.current) {
-        mqttRef.current.publishEvent('command_received', { command: 'setTime', time: timeStr });
-        mqttRef.current.publishState({
+        publishCommandReceived('setTime', { time: timeStr });
+        mqttRef.current.publishState(buildStatePayload({
           state: active ? 'running' : 'paused',
           time: timeStr,
-          seconds: seconds,
-        });
+          seconds,
+        }));
       }
     } catch (error) {
       console.error('[ClockShell] SetTime failed:', error);
@@ -378,12 +522,12 @@ const ClockShell = ({ config }) => {
       setTime(seconds);
 
       if (mqttRef.current) {
-        mqttRef.current.publishEvent('command_received', { command: 'setTime', seconds });
-        mqttRef.current.publishState({
+        publishCommandReceived('setTime', { seconds });
+        mqttRef.current.publishState(buildStatePayload({
           state: active ? 'running' : 'paused',
           time: timeStr,
           seconds,
-        });
+        }));
       }
     } catch (error) {
       console.error('[ClockShell] SetSeconds failed:', error);
@@ -398,12 +542,14 @@ const ClockShell = ({ config }) => {
     setVisible(false);
 
     if (mqttRef.current) {
-      mqttRef.current.publishEvent('command_received', { command: 'clear' });
-      mqttRef.current.publishState({
+      publishCommandReceived('clear');
+      mqttRef.current.publishState(buildStatePayload({
         state: 'hidden',
         time: timerRef.current.formatTime(),
         seconds: timerRef.current.getTime(),
-      });
+        visibility: 0.0,
+        hint: '',
+      }));
     }
   };
 
@@ -424,7 +570,9 @@ const ClockShell = ({ config }) => {
     startHintTimer(normalizedDuration * 1000);
 
     if (mqttRef.current) {
+      publishCommandReceived('hint', { text: normalizedText, duration: normalizedDuration });
       mqttRef.current.publishEvent('hint_displayed', { text: normalizedText, duration: normalizedDuration });
+      mqttRef.current.publishState(buildStatePayload({ hint: normalizedText }));
     }
     console.warn('[ClockShell] handleHint: text=', JSON.stringify(normalizedText), 'duration=', normalizedDuration);
   };
@@ -482,7 +630,7 @@ const ClockShell = ({ config }) => {
     setDisplayColors(next);
 
     if (mqttRef.current) {
-      mqttRef.current.publishEvent('command_received', { command: 'setDisplayColors' });
+      publishCommandReceived('setDisplayColors');
       mqttRef.current.publishEvent('display_colors_updated', {
         backgroundColor: next.backgroundColor,
         textColor: next.textColor,
@@ -490,6 +638,7 @@ const ClockShell = ({ config }) => {
         fadeTime: next.fadeTime,
       });
       warnings.forEach((warning) => mqttRef.current.publishWarning(warning, { command: 'setDisplayColors' }));
+      mqttRef.current.publishState(buildStatePayload());
     }
   };
 
@@ -498,7 +647,7 @@ const ClockShell = ({ config }) => {
     setDisplayColors(reset);
 
     if (mqttRef.current) {
-      mqttRef.current.publishEvent('command_received', { command: 'resetDisplayColors' });
+      publishCommandReceived('resetDisplayColors');
       mqttRef.current.publishEvent('display_colors_updated', {
         backgroundColor: reset.backgroundColor,
         textColor: reset.textColor,
@@ -506,6 +655,7 @@ const ClockShell = ({ config }) => {
         fadeTime: reset.fadeTime,
         reset: true,
       });
+      mqttRef.current.publishState(buildStatePayload());
     }
   };
 

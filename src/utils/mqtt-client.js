@@ -45,15 +45,23 @@ export class MQTTClient {
     const { host, port, topic } = this.config;
     const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 
-    // When host is empty the clock auto-connects to the machine that served
-    // the page (i.e. the Nginx host running the MQTT broker).  An explicit
-    // non-empty host overrides this and is used as-is.
-    const pageHost = window?.location?.hostname || '127.0.0.1';
-    const brokerHost = !host ? pageHost : host;
-
-    // Build explicit WebSocket URL (Paho supports url form)
+    // Default to same-origin nginx websocket proxy at /mqtt.
+    // This avoids exposing direct broker ports to browser clients.
     const scheme = window?.location?.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${scheme}://${brokerHost}:${port}/`;
+    const pageHost = window?.location?.host || '127.0.0.1';
+    let url = `${scheme}://${pageHost}/mqtt`;
+
+    // Optional direct-connect override:
+    // - If host already looks like a ws URL, use it as-is.
+    // - Otherwise connect directly to host:port.
+    if (typeof host === 'string' && host.trim()) {
+      const normalizedHost = host.trim();
+      if (normalizedHost.startsWith('ws://') || normalizedHost.startsWith('wss://')) {
+        url = normalizedHost;
+      } else {
+        url = `${scheme}://${normalizedHost}:${port}/`;
+      }
+    }
 
     console.log(`[MQTT] Connecting to ${url} with topic ${topic}`);
 

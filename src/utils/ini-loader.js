@@ -96,6 +96,7 @@ function validateConfig(rawConfig) {
       topic: rawConfig.mqtt.topic || 'paradox/clock',
       reconnect_interval: coerceNumber(rawConfig.mqtt.reconnect_interval, 5000),
       keep_alive: coerceNumber(rawConfig.mqtt.keep_alive, 60),
+      heartbeat_ms: coerceNumber(rawConfig.mqtt.heartbeat_ms, 5000),
     } : null,
 
     display: {

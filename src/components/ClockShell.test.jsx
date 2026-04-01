@@ -221,4 +221,39 @@ describe('ClockShell hint lifecycle', () => {
 
     expect(mockClient.publishWarning).toHaveBeenCalled();
   });
+
+  test('publishes visibility-only transition updates every fade step', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'hide' });
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(700);
+    });
+
+    mockClient.publishState.mockClear();
+
+    act(() => {
+      mockClient.emitCommand({ command: 'show' });
+    });
+
+    // Drive at least one transition tick (250ms cadence in ClockShell).
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+
+    const visibilityOnlyPublishes = mockClient.publishState.mock.calls
+      .map((call) => call[0])
+      .filter((payload) => payload && Object.keys(payload).length === 1 && Object.prototype.hasOwnProperty.call(payload, 'visibility'));
+
+    expect(visibilityOnlyPublishes.length).toBeGreaterThan(0);
+
+    const hasIntermediateValue = visibilityOnlyPublishes.some((payload) => (
+      typeof payload.visibility === 'number' && payload.visibility > 0 && payload.visibility < 1
+    ));
+
+    expect(hasIntermediateValue).toBe(true);
+  });
 });
