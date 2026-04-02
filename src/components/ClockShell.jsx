@@ -708,6 +708,7 @@ const ClockShell = ({ config }) => {
           backgroundImage={config.display.fade_background_image}
         >
           <Renderer
+            config={config}
             time={time}
             hint={hintText}
             hintText={hintText}
@@ -719,6 +720,7 @@ const ClockShell = ({ config }) => {
         </FadeWrapper>
       ) : (
         <Renderer
+          config={config}
           time={time}
           hint={hintText}
           hintText={hintText}

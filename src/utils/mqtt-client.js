@@ -45,28 +45,41 @@ export class MQTTClient {
     const { host, port, topic } = this.config;
     const clientId = `pxc_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
 
-    // Default to same-origin nginx websocket proxy at /mqtt.
-    // This avoids exposing direct broker ports to browser clients.
-    const scheme = window?.location?.protocol === 'https:' ? 'wss' : 'ws';
-    const pageHost = window?.location?.host || '127.0.0.1';
-    let url = `${scheme}://${pageHost}/mqtt`;
+    const pageProtocol = window?.location?.protocol === 'https:' ? 'https:' : 'http:';
+    const pageHost = window?.location?.hostname || '127.0.0.1';
+    const pagePort = Number(window?.location?.port || (pageProtocol === 'https:' ? 443 : 80));
+
+    let connectHost = pageHost;
+    let connectPort = pagePort;
+    let connectPath = '/mqtt';
+    let useSSL = pageProtocol === 'https:';
 
     // Optional direct-connect override:
-    // - If host already looks like a ws URL, use it as-is.
-    // - Otherwise connect directly to host:port.
+    // - ws://host:port/path or wss://host:port/path
+    // - plain host string (uses configured MQTT websocket port and root path)
     if (typeof host === 'string' && host.trim()) {
       const normalizedHost = host.trim();
+
       if (normalizedHost.startsWith('ws://') || normalizedHost.startsWith('wss://')) {
-        url = normalizedHost;
+        const parsed = new URL(normalizedHost);
+        connectHost = parsed.hostname;
+        connectPort = Number(parsed.port || (parsed.protocol === 'wss:' ? 443 : 80));
+        connectPath = parsed.pathname || '/';
+        useSSL = parsed.protocol === 'wss:';
       } else {
-        url = `${scheme}://${normalizedHost}:${port}/`;
+        connectHost = normalizedHost;
+        connectPort = Number(port);
+        connectPath = '/';
+        useSSL = pageProtocol === 'https:';
       }
     }
 
-    console.log(`[MQTT] Connecting to ${url} with topic ${topic}`);
+    console.log(
+      `[MQTT] Connecting to ${useSSL ? 'wss' : 'ws'}://${connectHost}:${connectPort}${connectPath} with topic ${topic}`
+    );
 
-    // Use URL-based constructor to avoid path/arg confusion
-    this.client = new Client(url, clientId);
+    // Use explicit host/port/path constructor for broad Paho compatibility.
+    this.client = new Client(connectHost, connectPort, connectPath, clientId);
 
     // Set up event handlers
     this.client.onConnectionLost = (response) => {
@@ -91,6 +104,7 @@ export class MQTTClient {
     const connectOptions = {
       timeout: 30,
       keepAliveInterval: this.config.keep_alive || 60,
+      useSSL,
       onSuccess: () => {
         console.log('[MQTT] Connected successfully');
         this.connected$.next(true);

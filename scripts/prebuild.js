@@ -204,6 +204,16 @@ export default config;
 
 fs.writeFileSync(outputPath, jsContent, 'utf-8');
 
+// Mirror shared style assets into public/assets so react-scripts copies them to build/assets.
+const sourceAssetsDir = path.resolve(ROOT_DIR, 'assets');
+const publicAssetsDir = path.resolve(ROOT_DIR, 'public/assets');
+
+if (fs.existsSync(sourceAssetsDir)) {
+  fs.mkdirSync(publicAssetsDir, { recursive: true });
+  fs.cpSync(sourceAssetsDir, publicAssetsDir, { recursive: true, force: true });
+  console.log('[prebuild] ✓ Synced assets/ -> public/assets/');
+}
+
 // Also generate public/config.json for runtime editing
 // Only include editable fields (exclude type.style and type.mode which require rebuild)
 console.log(`[prebuild] Generating public/config.json for runtime use`);

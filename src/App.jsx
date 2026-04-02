@@ -71,15 +71,21 @@ function App() {
   }
 
   const rotation = config.display.orientation || 0;
+  const normalizedRotation = ((rotation % 360) + 360) % 360;
+  const isQuarterTurn = normalizedRotation === 90 || normalizedRotation === 270;
 
   return (
-    <div 
-      className="app-container"
-      style={{
-        transform: `rotate(${rotation}deg)`,
-      }}
-    >
-      <ClockShell config={config} />
+    <div className="app-shell">
+      <div 
+        className="app-container"
+        style={{
+          width: isQuarterTurn ? '100vh' : '100vw',
+          height: isQuarterTurn ? '100vw' : '100vh',
+          transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+        }}
+      >
+        <ClockShell config={config} />
+      </div>
     </div>
   );
 }
