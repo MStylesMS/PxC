@@ -40,6 +40,12 @@ jest.mock('../utils/mqtt-client', () => {
         this._commandHandler({ payload: JSON.stringify(command) });
       }
     }
+
+    emitRaw(payload) {
+      if (this._commandHandler) {
+        this._commandHandler({ payload });
+      }
+    }
   }
 
   return {
@@ -65,6 +71,16 @@ const config = {
     host: 'localhost',
     port: 9001,
     topic: 'clock/test',
+  },
+};
+
+const analogConfig = {
+  ...config,
+  type: { style: 'antique-analog-oval-portrait' },
+  analog: {
+    background: '/clock/assets/houdini/background.png',
+    'minute_hand.path': '/clock/assets/houdini/minute.png',
+    'second_hand.path': '/clock/assets/houdini/second.png',
   },
 };
 
@@ -222,38 +238,86 @@ describe('ClockShell hint lifecycle', () => {
     expect(mockClient.publishWarning).toHaveBeenCalled();
   });
 
-  test('publishes visibility-only transition updates every fade step', () => {
-    render(<ClockShell config={config} />);
+  test('makes show and hide instant while preserving fadeIn duration for wrapped clocks', () => {
+    render(<ClockShell config={analogConfig} />);
 
-    act(() => {
-      mockClient.emitCommand({ command: 'hide' });
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(700);
-    });
-
-    mockClient.publishState.mockClear();
+    const fadeContent = document.querySelector('.fade-content');
+    expect(fadeContent.style.transition).toBe('opacity 300ms ease-in-out');
 
     act(() => {
       mockClient.emitCommand({ command: 'show' });
     });
 
-    // Drive at least one transition tick (250ms cadence in ClockShell).
+    expect(fadeContent.style.opacity).toBe('1');
+    expect(fadeContent.style.transition).toBe('opacity 0ms ease-in-out');
+
     act(() => {
-      jest.advanceTimersByTime(300);
+      mockClient.emitCommand({ command: 'hide' });
     });
 
-    const visibilityOnlyPublishes = mockClient.publishState.mock.calls
-      .map((call) => call[0])
-      .filter((payload) => payload && Object.keys(payload).length === 1 && Object.prototype.hasOwnProperty.call(payload, 'visibility'));
+    expect(fadeContent.style.opacity).toBe('0');
+    expect(fadeContent.style.transition).toBe('opacity 0ms ease-in-out');
 
-    expect(visibilityOnlyPublishes.length).toBeGreaterThan(0);
+    act(() => {
+      mockClient.emitCommand({ command: 'fadeIn', duration: 1.5 });
+    });
 
-    const hasIntermediateValue = visibilityOnlyPublishes.some((payload) => (
-      typeof payload.visibility === 'number' && payload.visibility > 0 && payload.visibility < 1
-    ));
+    expect(fadeContent.style.opacity).toBe('1');
+    expect(fadeContent.style.transition).toBe('opacity 1500ms ease-in-out');
 
-    expect(hasIntermediateValue).toBe(true);
+    act(() => {
+      mockClient.emitCommand({ command: 'fadeOut', fadeTime: 0.5 });
+    });
+
+    expect(fadeContent.style.opacity).toBe('0');
+    expect(fadeContent.style.transition).toBe('opacity 500ms ease-in-out');
+  });
+
+  test('publishes current state on getState', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'setSeconds', seconds: 90 });
+      mockClient.emitCommand({ command: 'getState' });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('command_received', { command: 'getState' });
+    expect(mockClient.publishState).toHaveBeenLastCalledWith({
+      state: 'paused',
+      time: '01:30',
+      seconds: 90,
+      visible: true,
+    });
+  });
+
+  test('rejects removed aliases as unknown commands', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'fadeout' });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('command_rejected', {
+      command: 'fadeout',
+      reason: 'unknown_command',
+    });
+    expect(mockClient.publishWarning).toHaveBeenCalledWith('Command rejected', {
+      command: 'fadeout',
+      reason: 'unknown_command',
+    });
+  });
+
+  test('rejects malformed payloads', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitRaw('{"command":');
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('command_rejected', expect.objectContaining({
+      command: null,
+      reason: 'invalid_format',
+    }));
+    expect(mockClient.publishWarning).toHaveBeenCalledWith('Malformed command', expect.any(Object));
   });
 });

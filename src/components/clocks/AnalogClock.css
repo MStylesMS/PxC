@@ -1,8 +1,8 @@
 .analog-clock {
   position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: visible; /* Allow content to be visible even if transformed outside viewport */
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 .clock-stage {
@@ -11,7 +11,7 @@
   display: flex;
   align-items: center; /* center vertically */
   justify-content: center; /* center horizontally */
-  overflow: visible;
+  overflow: hidden;
 }
 
 .clock-base {

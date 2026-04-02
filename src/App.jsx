@@ -12,9 +12,27 @@ import ClockShell from './components/ClockShell';
 import builtinConfig from './generated-config';
 import './App.css';
 
+const getViewportSize = () => ({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
+
 function App() {
   const [config, setConfig] = useState(builtinConfig);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewportSize, setViewportSize] = useState(getViewportSize);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportSize(getViewportSize());
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     // Try to load runtime config from build/config.json
@@ -39,10 +57,16 @@ function App() {
           
           // Merge style-specific section (led, analog, flip, etc.)
           const styleKey = Object.keys(runtimeConfig).find(key => 
-            !['mqtt', 'display'].includes(key)
+            !['mqtt', 'display', 'type'].includes(key)
           );
           if (styleKey && runtimeConfig[styleKey]) {
-            mergedConfig[styleKey] = { ...builtinConfig[styleKey], ...runtimeConfig[styleKey] };
+            mergedConfig[styleKey] = { ...builtinConfig[styleKey] || {}, ...runtimeConfig[styleKey] };
+          } else if (builtinConfig[builtinConfig.type.style.split('-')[0]]) {
+            // Fallback: if there's a built-in style section, ensure it's in mergedConfig
+            const defaultStyleKey = builtinConfig.type.style.split('-')[0];
+            if (!mergedConfig[defaultStyleKey] && builtinConfig[defaultStyleKey]) {
+              mergedConfig[defaultStyleKey] = builtinConfig[defaultStyleKey];
+            }
           }
           
           console.log('[PxC] Runtime config loaded and merged:', mergedConfig);
@@ -73,16 +97,23 @@ function App() {
   const rotation = config.display.orientation || 0;
   const normalizedRotation = ((rotation % 360) + 360) % 360;
   const isQuarterTurn = normalizedRotation === 90 || normalizedRotation === 270;
+  const containerStyle = isQuarterTurn
+    ? {
+        width: `${viewportSize.height}px`,
+        height: `${viewportSize.width}px`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+      }
+    : {
+        width: `${viewportSize.width}px`,
+        height: `${viewportSize.height}px`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+      };
 
   return (
     <div className="app-shell">
       <div 
         className="app-container"
-        style={{
-          width: isQuarterTurn ? '100vh' : '100vw',
-          height: isQuarterTurn ? '100vw' : '100vh',
-          transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-        }}
+        style={containerStyle}
       >
         <ClockShell config={config} />
       </div>

@@ -9,9 +9,11 @@ node_modules/
 # Production builds
 /build
 /dist
+build-*/
 
 # Generated config
 src/generated-config.js
+.pxc-build-meta.json
 
 # Misc
 .DS_Store

@@ -36,6 +36,7 @@ export class MQTTClient {
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = this.config.reconnect_interval || 5000;
+    this._heartbeatInterval = null;
   }
 
   /**
@@ -114,6 +115,10 @@ export class MQTTClient {
         this.client.subscribe(`${topic}/commands`);
         this.client.subscribe(`${topic}`);
         console.log(`[MQTT] Subscribed to ${topic}/commands and ${topic}`);
+
+        // Publish discovery metadata and start heartbeat
+        this._publishSchema();
+        this._startHeartbeat();
       },
       onFailure: (error) => {
         console.error('[MQTT] Connection failed:', error.errorMessage);
@@ -224,9 +229,83 @@ export class MQTTClient {
   }
 
   /**
+   * Publish a message to a subtopic with the MQTT retain flag set.
+   * @param {string} subtopic - Subtopic (e.g. 'schema')
+   * @param {object} payload - Message payload
+   */
+  publishRetained(subtopic, payload) {
+    if (!this.client || !this.connected$.value) {
+      console.warn('[MQTT] Cannot publishRetained: not connected');
+      return;
+    }
+    const topic = `${this.config.topic}/${subtopic}`;
+    const payloadStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    const message = new Message(payloadStr);
+    message.destinationName = topic;
+    message.retained = true;
+    try {
+      this.client.send(message);
+      console.log(`[MQTT] Published retained to ${topic}`);
+    } catch (error) {
+      console.error('[MQTT] publishRetained failed:', error);
+    }
+  }
+
+  /**
+   * Publish a retained schema message listing all commands this clock accepts.
+   * @private
+   */
+  _publishSchema() {
+    this.publishRetained('schema', {
+      application: 'pxc',
+      commandsTopic: `${this.config.topic}/commands`,
+      commands: [
+        { command: 'start',            description: 'Start or resume countdown (optional: time MM:SS)' },
+        { command: 'resume',           description: 'Resume countdown (optional: time MM:SS)' },
+        { command: 'pause',            description: 'Pause countdown' },
+        { command: 'stop',             description: 'Stop countdown without reset' },
+        { command: 'setTime',          description: 'Set countdown time (time: MM:SS)' },
+        { command: 'setSeconds',       description: 'Set countdown in seconds (seconds: number)' },
+        { command: 'show',             description: 'Make clock visible' },
+        { command: 'hide',             description: 'Hide clock' },
+        { command: 'fadeIn',           description: 'Fade clock in (optional: duration seconds)' },
+        { command: 'fadeOut',          description: 'Fade clock out (optional: duration seconds)' },
+        { command: 'hint',             description: 'Show hint overlay (text: string, duration: seconds)' },
+        { command: 'clearHint',        description: 'Clear hint overlay' },
+        { command: 'setDisplayColors', description: 'Override display colors (backgroundColor, textColor)' }
+      ]
+    });
+  }
+
+  /**
+   * Publish a periodic heartbeat on {topic}/status so external tools can detect liveness.
+   * Publishes immediately on call, then every 30 seconds.
+   * @private
+   */
+  _startHeartbeat() {
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+    }
+    const publishHeartbeat = () => {
+      if (!this.client || !this.connected$.value) return;
+      this.publish('status', {
+        application: 'pxc',
+        status: 'online',
+        timestamp: new Date().toISOString()
+      });
+    };
+    publishHeartbeat();
+    this._heartbeatInterval = setInterval(publishHeartbeat, 30000);
+  }
+
+  /**
    * Disconnect from broker
    */
   disconnect() {
+    if (this._heartbeatInterval) {
+      clearInterval(this._heartbeatInterval);
+      this._heartbeatInterval = null;
+    }
     if (this.client) {
       this.client.disconnect();
       this.connected$.next(false);
