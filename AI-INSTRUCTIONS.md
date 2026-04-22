@@ -15,6 +15,18 @@ PxC is a **framework for creating optimized, configuration-driven clock applicat
 
 PxC is a **build system and component framework**, not a single clock app. Each INI config defines a clock variant (style, assets, MQTT settings, rotation). The build system reads the config, generates an optimized React app with only the needed renderers and assets, and outputs a static bundle. Styles include analog (rotating hands), LED/digit, flip clock, and video/graphic-based.
 
+## Paradox Family
+
+PxC is one of seven Paradox products. A built PxC clock is typically driven by PxO via MQTT and rendered in a PFx-managed browser/kiosk surface.
+
+- **PFx** — media/audio/lights/relays controller
+- **PxO** — game orchestration engine (primary MQTT command source)
+- **PxC** — this project (clock app framework)
+- **PxT** — player terminal kiosk
+- **Pio** — GPIO-to-MQTT bridge (C++)
+- **PZB** — Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
+- Rooms: `agent22`, `houdinis-challenge`
+
 ## Critical Constraints
 
 - **Configuration-driven**: non-developers create new clock variants by editing INI files, not code
