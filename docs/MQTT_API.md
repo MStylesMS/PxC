@@ -220,6 +220,28 @@ Sets the stopwatch elapsed time (useful for resuming from a saved state).
 
 ## 4. Display Control Commands
 
+### Show (Instant)
+Makes the clock visible instantly.
+
+```json
+{"command": "show"}
+```
+
+**Behavior**:
+- Equivalent to `fadeIn` with a fade time of `0` seconds
+- Publishes normal `command_received` acknowledgment
+
+### Hide (Instant)
+Hides the clock instantly.
+
+```json
+{"command": "hide"}
+```
+
+**Behavior**:
+- Equivalent to `fadeOut` with a fade time of `0` seconds
+- Publishes normal `command_received` acknowledgment
+
 ### Fade In
 Makes the clock display visible with a smooth fade-in effect.
 
@@ -228,7 +250,9 @@ Makes the clock display visible with a smooth fade-in effect.
 ```
 
 **Parameters**:
-- `duration` (optional): Fade duration in seconds (default from `.ini` `fade_duration_ms`)
+- `duration` (optional): Fade duration in seconds
+- `fadeTime` (optional): Alias for `duration` in seconds
+- If both are missing or invalid, fallback uses `.ini` `fade_duration_ms` (default `2000ms`, i.e. 2 seconds)
 
 **Examples**:
 ```json
@@ -245,7 +269,9 @@ Hides the clock display with a smooth fade-out effect.
 ```
 
 **Parameters**:
-- `duration` (optional): Fade duration in seconds (default from `.ini`)
+- `duration` (optional): Fade duration in seconds
+- `fadeTime` (optional): Alias for `duration` in seconds
+- If both are missing or invalid, fallback uses `.ini` `fade_duration_ms` (default `2000ms`, i.e. 2 seconds)
 
 **Examples**:
 ```json
