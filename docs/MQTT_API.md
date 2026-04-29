@@ -21,7 +21,7 @@ keep_alive = 60
 
 - **Base Topic**: Defined in `[mqtt] topic` (e.g., `paradox/clock/my-clock`)
 - **Commands Topic**: `{base}/commands` (receives commands)
-- **State Topic**: `{base}/state` (publishes heartbeat/status)
+- **State Topic**: `{base}/state` (publishes heartbeat/lifecycle)
 - **Events Topic**: `{base}/events` (publishes command acknowledgments)
 - **Warnings Topic**: `{base}/warnings` (publishes error/warning messages)
 - **Protocol**: WebSocket MQTT (for browser compatibility) or standard MQTT

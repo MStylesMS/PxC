@@ -31,7 +31,7 @@ PxC is one of seven Paradox products. A built PxC clock is typically driven by P
 
 - **Configuration-driven**: non-developers create new clock variants by editing INI files, not code
 - **Build-time optimization**: config is baked into the build for fast startup
-- **MQTT topic structure**: `{baseTopic}/{commands|state|status|warnings}` (same as all Paradox components)
+- **MQTT topic structure**: `{baseTopic}/{commands|events|state|warnings}` (same as all Paradox components)
 - **Performance-first rendering**: use `React.memo`, `useMemo`, `useCallback` in all components
 - **Pluggable renderer architecture**: new clock styles must work without modifying core
 
