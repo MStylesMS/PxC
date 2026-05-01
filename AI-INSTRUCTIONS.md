@@ -24,7 +24,7 @@ PxC is one of seven Paradox products. A built PxC clock is typically driven by P
 - **PxC** — this project (clock app framework)
 - **PxT** — player terminal kiosk
 - **Pio** — GPIO-to-MQTT bridge (C++)
-- **PZB** — Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
+- **PxB** — Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
 - Rooms: `agent22`, `houdinis-challenge`
 
 ## Critical Constraints
