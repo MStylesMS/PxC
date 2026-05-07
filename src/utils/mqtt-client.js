@@ -34,7 +34,9 @@ export class MQTTClient {
     this.connected$ = new BehaviorSubject(false);
     this.messages$ = new Subject();
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
+    // Default to unlimited reconnects — PxC is a persistent display app and must
+    // always recover from transient broker outages or service restarts.
+    this.maxReconnectAttempts = this.config.max_reconnect_attempts ?? Infinity;
     this.reconnectDelay = this.config.reconnect_interval || 5000;
     this._heartbeatInterval = null;
   }
@@ -140,7 +142,8 @@ export class MQTTClient {
       return;
     }
 
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts);
+    // Exponential backoff capped at 60 seconds to avoid indefinite stalls
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts), 60000);
     this.reconnectAttempts++;
 
     console.log(`[MQTT] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
