@@ -1,0 +1,23 @@
+{
+  "mqtt": {
+    "host": "",
+    "port": 1884,
+    "topic": "paradox/agent22/clock",
+    "reconnect_interval": 5000,
+    "keep_alive": 60,
+    "heartbeat_ms": 5000
+  },
+  "display": {
+    "orientation": 0,
+    "fade_duration_ms": 600,
+    "fade_background_type": "color",
+    "fade_background_color": "#b3e0ff",
+    "fade_background_image": null
+  },
+  "led": {
+    "time_font": "CursedTimer",
+    "hint_font": "TypewriterBold",
+    "background_color": "#b3e0ff",
+    "text_color": "#111111"
+  }
+}

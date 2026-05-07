@@ -15,6 +15,10 @@ build-*/
 src/generated-config.js
 .pxc-build-meta.json
 
+# Build artifact — per-profile source of truth is public/config-<name>.json
+public/config.json
+public/config.json
+
 # Misc
 .DS_Store
 .env.local

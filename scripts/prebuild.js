@@ -214,14 +214,14 @@ if (fs.existsSync(sourceAssetsDir)) {
   console.log('[prebuild] ✓ Synced assets/ -> public/assets/');
 }
 
-// Also generate public/config.json for runtime editing
-// Only include editable fields (exclude type.style and type.mode which require rebuild)
-console.log(`[prebuild] Generating public/config.json for runtime use`);
-const publicConfigPath = path.resolve(ROOT_DIR, 'public/config.json');
-const publicConfigDir = path.dirname(publicConfigPath);
-
-if (!fs.existsSync(publicConfigDir)) {
-  fs.mkdirSync(publicConfigDir, { recursive: true });
+// Generate public/config.json and a named profile copy for runtime use.
+// Only include editable fields (exclude type.style and type.mode which require rebuild).
+//
+// public/config.json     – ignored by git; consumed by react-scripts build (→ build/config.json)
+// public/config-<name>.json – tracked source-of-truth for each game profile's runtime config
+const publicDir = path.resolve(ROOT_DIR, 'public');
+if (!fs.existsSync(publicDir)) {
+  fs.mkdirSync(publicDir, { recursive: true });
 }
 
 // Create runtime config with only editable fields
@@ -231,11 +231,28 @@ const runtimeConfig = {
   [styleSection]: config[styleSection],
 };
 
-fs.writeFileSync(publicConfigPath, JSON.stringify(runtimeConfig, null, 2), 'utf-8');
+const runtimeConfigJson = JSON.stringify(runtimeConfig, null, 2);
+
+// Derive profile name from the INI filename (e.g. "simple-4-digit" → "agent22" mapped
+// by known aliases, otherwise uses the bare stem as the profile name).
+const iniStem = path.basename(configFile, '.ini');
+const profileNameMap = {
+  'simple-4-digit': 'agent22',
+  'houdini': 'houdini',
+};
+const profileName = profileNameMap[iniStem] || iniStem;
+
+// Write the named profile file (tracked in git)
+const namedConfigPath = path.resolve(publicDir, `config-${profileName}.json`);
+fs.writeFileSync(namedConfigPath, runtimeConfigJson, 'utf-8');
+
+// Write public/config.json (untracked – generated artifact copied to build/ by CRA)
+const publicConfigPath = path.resolve(publicDir, 'config.json');
+fs.writeFileSync(publicConfigPath, runtimeConfigJson, 'utf-8');
 
 console.log(`[prebuild] ✓ Generated config from ${configFile}`);
 console.log(`[prebuild] ✓ Style: ${config.type.style}`);
 console.log(`[prebuild] ✓ Mode: ${config.type.mode}`);
 console.log(`[prebuild] ✓ MQTT: ${config.mqtt ? 'enabled' : 'disabled'}`);
-console.log(`[prebuild] ✓ Runtime config: public/config.json (will be copied to build/config.json)`);
+console.log(`[prebuild] ✓ Runtime config: public/config-${profileName}.json (tracked) + public/config.json (build artifact)`);
 console.log(`[prebuild] ✓ Ready to build`);
