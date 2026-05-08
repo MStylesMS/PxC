@@ -12,7 +12,7 @@
     "paradox"
   ],
   "author": "Paradox Escape Rooms",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git@github.com:MStylesMS/PxC.git"
