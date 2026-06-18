@@ -17,7 +17,7 @@ PxC is a **build system and component framework**, not a single clock app. Each 
 
 ## Paradox Family
 
-PxC is one of seven Paradox products. A built PxC clock is typically driven by PxO via MQTT and rendered in a PFx-managed browser/kiosk surface.
+PxC is one of the Paradox products. A built PxC clock is typically driven by PxO via MQTT and rendered in a PFx-managed browser/kiosk surface.
 
 - **PFx** — media/audio/lights/relays controller
 - **PxO** — game orchestration engine (primary MQTT command source)
@@ -25,6 +25,7 @@ PxC is one of seven Paradox products. A built PxC clock is typically driven by P
 - **PxT** — player terminal kiosk
 - **Pio** — GPIO-to-MQTT bridge (C++)
 - **PxB** — Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
+- **PxP** — Paradox Prime operator/admin hub (configures & manages this app; not part of a running game)
 - Rooms: `agent22`, `houdinis-challenge`
 
 ## Critical Constraints
