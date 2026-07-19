@@ -23,7 +23,7 @@ PxC is one of the Paradox products. A built PxC clock is typically driven by PxO
 - **PxO** — game orchestration engine (primary MQTT command source)
 - **PxC** — this project (clock app framework)
 - **PxT** — player terminal kiosk
-- **Pio** — GPIO-to-MQTT bridge (C++)
+- **PxIO** — GPIO-to-MQTT bridge (C++)
 - **PxB** — Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
 - **PxP** — Paradox Prime operator/admin hub (configures & manages this app; not part of a running game)
 - Rooms: `agent22`, `houdinis-challenge`
