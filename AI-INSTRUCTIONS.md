@@ -1,4 +1,4 @@
-# Paradox Clock (PxC) — AI Instructions
+# Paradox Clock (PxC) â€” AI Instructions
 
 PxC is a **framework for creating optimized, configuration-driven clock applications**. It reads `.ini` configuration files and generates lean, production-ready React apps for countdown, real-time clock, and stopwatch displays.
 
@@ -19,13 +19,13 @@ PxC is a **build system and component framework**, not a single clock app. Each 
 
 PxC is one of the Paradox products. A built PxC clock is typically driven by PxO via MQTT and rendered in a PFx-managed browser/kiosk surface.
 
-- **PFx** — media/audio/lights/relays controller
-- **PxO** — game orchestration engine (primary MQTT command source)
-- **PxC** — this project (clock app framework)
-- **PxT** — player terminal kiosk
-- **PxIO** — GPIO-to-MQTT bridge (C++)
-- **PxB** — Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
-- **PxP** — Paradox Prime operator/admin hub (configures & manages this app; not part of a running game)
+- **PFx** â€” media/audio/lights/relays controller
+- **PxO** â€” game orchestration engine (primary MQTT command source)
+- **PxC** â€” this project (clock app framework)
+- **PxT** â€” player terminal kiosk
+- **PxIO** â€” GPIO-to-MQTT bridge (C++)
+- **PxB** â€” Z-Wave / Zigbee / Thread to MQTT bridge (Node.js)
+- **PxP** â€” Paradox Prime operator/admin hub (configures & manages this app; not part of a running game)
 - Rooms: `agent22`, `houdinis-challenge`
 
 ## Critical Constraints
@@ -56,3 +56,7 @@ Use commit prefixes: `Docs:`, `Implement:`, `Fix:`, `Test:`, `Refactor:`, `Chore
 | [docs/TESTING.md](docs/TESTING.md) | Testing strategy and guidelines |
 | [README.md](README.md) | User-facing overview, quick start, clock styles |
 | Parent system: [/opt/paradox/AI-INSTRUCTIONS.md](/opt/paradox/AI-INSTRUCTIONS.md) | System-wide context (when in Paradox workspace) |
+
+## Suite standards
+
+Suite-wide contracts live in [../PxH/docs/standards/](../PxH/docs/standards/) (folder, not a single file). Read those before changing MQTT topics or shared conventions. If you change a standard, update the file under PxH `docs/standards/` first and propagate to other repos' docs in the same work.
