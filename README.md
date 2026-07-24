@@ -27,7 +27,7 @@ Each `.ini` configuration produces a separate, self-contained clock application.
 ## Quick Start
 
 ### Prerequisites
-- Node.js 16+ and npm
+- Node.js 24+ and npm
 - (Optional) MQTT broker (e.g., Mosquitto) for remote control
 
 ### Clone and Install
