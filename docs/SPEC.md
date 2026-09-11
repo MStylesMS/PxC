@@ -124,6 +124,10 @@ Common sections
 | [display] | fade_background_image | path | Path to background image shown when faded out. Only used if `fade_background_type=image`. |
 | [type] | style | string | Clock style identifier (e.g. `antique-analog-oval-portrait`, `simple-4digit-landscape`). |
 | [type] | mode | string | mode for this clock instance: `countdown`, `clock`, or `stopwatch`. |
+| [media] | url | URL | Optional default / cleared pack: prebuilt clock site to load when `switchMedia` sends `mediaId: null`. |
+| [media.N] | url | URL | Optional map from catalog Version ID (`1`, `2`, …) to a **prebuilt** clock bundle URL. |
+
+**Media packs:** PxC does **not** prefix a PFx-style `media_dir`. Rooms that want a language/restyle pack must **build one site per pack** (or host each bundle at its own URL) and list those URLs here or in runtime `config.json`. MQTT `switchMedia` `{ mediaId, refresh? }` tells the kiosk to load that URL. Switching **may flash**; there is no preload. If no URL is configured for an id, the clock still accepts the command, publishes `mediaId` on state, and warns — it does not crash. Rooms without a clock (including TFD) skip PxC. See `docs/MQTT_API.md` and the suite MQTT contract § Media pack.
 
 Notes: Many other keys are per-style and appear under section names that match the style (for example `[analog]`, `[led4]`, `[flip]`, `[font]`, `[graphic]`). Keys that reference assets should be paths relative to `/assets/<style>/` or absolute URLs.
 

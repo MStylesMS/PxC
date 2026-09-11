@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const ini = require('ini');
+const { extractMediaPackUrls } = require('./media-pack');
 
 /**
  * Load and parse an INI file
@@ -114,6 +115,9 @@ function validateConfig(rawConfig) {
 
     // Include style-specific config
     [styleSection]: rawConfig[styleSection],
+
+    // Optional pack-id → prebuilt clock URL map. Not a media_dir prefix.
+    media: extractMediaPackUrls(rawConfig),
   };
 
   return config;

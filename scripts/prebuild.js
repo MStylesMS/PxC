@@ -15,6 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const ini = require('ini');
+const { extractMediaPackUrls } = require('../src/utils/media-pack');
 
 // Configuration
 const DEFAULT_CONFIG = 'config/houdini.ini';
@@ -180,6 +181,9 @@ const config = {
   
   // Include style-specific config
   [styleSection]: rawConfig[styleSection],
+
+  // Optional pack-id → prebuilt clock URL. Rooms build one site per pack.
+  media: extractMediaPackUrls(rawConfig),
 };
 
 console.log(`[prebuild] Generating ${OUTPUT_FILE}`);
@@ -229,6 +233,7 @@ const runtimeConfig = {
   mqtt: config.mqtt,
   display: config.display,
   [styleSection]: config[styleSection],
+  media: config.media,
 };
 
 const runtimeConfigJson = JSON.stringify(runtimeConfig, null, 2);

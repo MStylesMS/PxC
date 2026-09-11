@@ -186,6 +186,24 @@ describe('INI Loader', () => {
       expect(validated.mqtt).toBeNull();
     });
 
+    test('passes through optional [media.N] pack URLs', () => {
+      const validated = validateConfig({
+        type: { style: 'test-analog', mode: 'countdown' },
+        display: { orientation: 0 },
+        analog: {
+          background: 'test.png',
+          'second_hand.path': 'hand.png',
+        },
+        media: {
+          url: '/clock/',
+          1: { url: '/clock/en/' },
+        },
+      });
+
+      expect(validated.media.defaultUrl).toBe('/clock/');
+      expect(validated.media.packs['1']).toBe('/clock/en/');
+    });
+
     test('includes MQTT config when present', () => {
       const configPath = path.resolve(__dirname, '../../../config/houdini.ini');
       const raw = loadIni(configPath);

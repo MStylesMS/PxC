@@ -1,8 +1,17 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import ClockShell from './ClockShell';
+import { applyPackNavigation, MEDIA_ID_STORAGE_KEY } from '../utils/media-pack';
 
 let mockClient = null;
+
+jest.mock('../utils/media-pack', () => {
+  const actual = jest.requireActual('../utils/media-pack');
+  return {
+    ...actual,
+    applyPackNavigation: jest.fn(),
+  };
+});
 
 jest.mock('../utils/mqtt-client', () => {
   class MockMQTTClient {
@@ -73,6 +82,10 @@ const config = {
     topic: 'clock/test',
   },
 };
+
+beforeEach(() => {
+  sessionStorage.removeItem(MEDIA_ID_STORAGE_KEY);
+});
 
 const analogConfig = {
   ...config,
@@ -319,5 +332,180 @@ describe('ClockShell hint lifecycle', () => {
       reason: 'invalid_format',
     }));
     expect(mockClient.publishWarning).toHaveBeenCalledWith('Malformed command', expect.any(Object));
+  });
+});
+
+describe('ClockShell media pack switch', () => {
+  const packConfig = {
+    ...config,
+    media: {
+      packs: { 2: '/pxc/2/' },
+      defaultUrl: '/pxc/',
+    },
+  };
+
+  beforeEach(() => {
+    sessionStorage.removeItem(MEDIA_ID_STORAGE_KEY);
+    applyPackNavigation.mockClear();
+  });
+
+  afterEach(() => {
+    sessionStorage.removeItem(MEDIA_ID_STORAGE_KEY);
+  });
+
+  test('switchMedia sets state mediaId and publishes mediaSwitched', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2 });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('mediaSwitched', {
+      mediaId: 2,
+      refresh: false,
+      refreshed: [],
+    });
+    expect(mockClient.publishState).toHaveBeenLastCalledWith(expect.objectContaining({
+      mediaId: 2,
+    }));
+    expect(mockClient.publishWarning).toHaveBeenCalledWith(
+      expect.stringMatching(/build one site per pack/i),
+      expect.objectContaining({ command: 'switchMedia', mediaId: 2 })
+    );
+    expect(applyPackNavigation).toHaveBeenCalledWith('none', null);
+  });
+
+  test('rejects illegal mediaId and keeps the previous pack', () => {
+    render(<ClockShell config={packConfig} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2 });
+    });
+    applyPackNavigation.mockClear();
+    mockClient.publishEvent.mockClear();
+    mockClient.publishWarning.mockClear();
+    mockClient.publishState.mockClear();
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 'v1' });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('command_rejected', expect.objectContaining({
+      command: 'switchMedia',
+      reason: 'invalid_parameter',
+    }));
+    expect(mockClient.publishEvent).not.toHaveBeenCalledWith('mediaSwitched', expect.anything());
+    expect(applyPackNavigation).not.toHaveBeenCalled();
+
+    act(() => {
+      mockClient.emitCommand({ command: 'getState' });
+    });
+    expect(mockClient.publishState).toHaveBeenLastCalledWith(expect.objectContaining({
+      mediaId: 2,
+    }));
+  });
+
+  test('navigates to the configured pack URL and may flash', () => {
+    render(<ClockShell config={packConfig} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2 });
+    });
+
+    expect(applyPackNavigation).toHaveBeenCalledWith('assign', '/pxc/2/');
+    expect(mockClient.publishWarning).not.toHaveBeenCalledWith(
+      expect.stringMatching(/build one site per pack/i),
+      expect.anything()
+    );
+  });
+
+  test('refresh false does not navigate when already on that pack', () => {
+    render(<ClockShell config={packConfig} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2 });
+    });
+    applyPackNavigation.mockClear();
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2, refresh: false });
+    });
+
+    expect(applyPackNavigation).toHaveBeenCalledWith('none', '/pxc/2/');
+  });
+
+  test('refresh true reloads the pack URL even if already on that id', () => {
+    render(<ClockShell config={packConfig} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2 });
+    });
+    applyPackNavigation.mockClear();
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2, refresh: true });
+    });
+
+    expect(applyPackNavigation).toHaveBeenCalledWith('reload', '/pxc/2/');
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('mediaSwitched', {
+      mediaId: 2,
+      refresh: true,
+      refreshed: ['bundle'],
+    });
+  });
+
+  test('clears mediaId from state when switchMedia sends null', () => {
+    render(<ClockShell config={packConfig} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: 2 });
+      mockClient.emitCommand({ command: 'switchMedia', mediaId: null });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('mediaSwitched', {
+      mediaId: null,
+      refresh: false,
+      refreshed: [],
+    });
+    expect(mockClient.publishState).toHaveBeenLastCalledWith(expect.not.objectContaining({
+      mediaId: expect.anything(),
+    }));
+  });
+
+  test('start with mediaId applies the pack then starts when it does not navigate', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'start', seconds: 90, mediaId: 2 });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('mediaSwitched', {
+      mediaId: 2,
+      refresh: false,
+      refreshed: [],
+    });
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('command_received', {
+      command: 'start',
+      seconds: 90,
+    });
+    expect(mockClient.publishState).toHaveBeenLastCalledWith(expect.objectContaining({
+      state: 'running',
+      seconds: 90,
+      mediaId: 2,
+    }));
+  });
+
+  test('unknown commands still reject without tearing down', () => {
+    render(<ClockShell config={config} />);
+
+    act(() => {
+      mockClient.emitCommand({ command: 'notARealCommand' });
+    });
+
+    expect(mockClient.publishEvent).toHaveBeenCalledWith('command_rejected', {
+      command: 'notARealCommand',
+      reason: 'unknown_command',
+    });
+    expect(screen.getByText('00:00')).toBeInTheDocument();
   });
 });

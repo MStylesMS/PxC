@@ -263,7 +263,8 @@ export class MQTTClient {
       application: 'pxc',
       commandsTopic: `${this.config.topic}/commands`,
       commands: [
-        { command: 'start',            description: 'Start or resume countdown (optional: time MM:SS)' },
+        { command: 'start',            description: 'Start or resume countdown (optional: time MM:SS, mediaId)' },
+        { command: 'switchMedia',      description: 'Load a prebuilt pack URL (mediaId, optional refresh)' },
         { command: 'resume',           description: 'Resume countdown (optional: time MM:SS)' },
         { command: 'pause',            description: 'Pause countdown' },
         { command: 'stop',             description: 'Stop countdown without reset' },

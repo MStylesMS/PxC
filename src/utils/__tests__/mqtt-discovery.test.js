@@ -169,6 +169,7 @@ describe('MQTTClient._publishSchema', () => {
     expect(payload.application).toBe('pxc');
     expect(Array.isArray(payload.commands)).toBe(true);
     expect(payload.commands.length).toBeGreaterThan(0);
+    expect(payload.commands.some((entry) => entry.command === 'switchMedia')).toBe(true);
   });
 });
 

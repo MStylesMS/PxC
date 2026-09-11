@@ -14,6 +14,15 @@ import AnalogClock from './clocks/AnalogClock';
 import LedClock from './clocks/LedClock';
 import { CountdownTimer } from '../utils/time-service';
 import { MQTTClient } from '../utils/mqtt-client';
+import {
+  applyPackNavigation,
+  lookupPackUrl,
+  parseRefresh,
+  persistMediaId,
+  readStoredMediaId,
+  resolvePackNavigation,
+  sanitizeMediaId,
+} from '../utils/media-pack';
 import './ClockShell.css';
 
 const NAMED_COLORS = new Set([
@@ -103,6 +112,7 @@ const ClockShell = ({ config }) => {
   const displayColorsRef = useRef(displayColors);
   const activeRef = useRef(active);
   const visibleRef = useRef(visible);
+  const mediaIdRef = useRef(readStoredMediaId());
 
   const clearHintTimer = () => {
     if (hintTimeoutRef.current) {
@@ -177,13 +187,22 @@ const ClockShell = ({ config }) => {
       derivedState = 'paused';
     }
 
-    return {
+    const payload = {
       state: derivedState,
       time: formattedTime,
       seconds,
       visible: visibleRef.current,
       ...overrides,
     };
+
+    // Omit mediaId when unset so old UIs see today's payload.
+    if (mediaIdRef.current != null && !Object.prototype.hasOwnProperty.call(overrides, 'mediaId')) {
+      payload.mediaId = mediaIdRef.current;
+    } else if (Object.prototype.hasOwnProperty.call(overrides, 'mediaId') && overrides.mediaId == null) {
+      delete payload.mediaId;
+    }
+
+    return payload;
   };
 
   const publishCurrentState = (overrides = {}) => {
@@ -208,6 +227,68 @@ const ClockShell = ({ config }) => {
       reason,
       ...details,
     });
+  };
+
+  /**
+   * Apply switchMedia. Does not prefix media_dir — loads a prebuilt pack URL.
+   * @returns {{ accepted: boolean, navigated: boolean }}
+   */
+  const applySwitchMedia = (cmd = {}, { allowClear = true } = {}) => {
+    if (!Object.prototype.hasOwnProperty.call(cmd, 'mediaId')) {
+      rejectCommand('invalid_parameter', cmd, { required: 'mediaId' });
+      return { accepted: false, navigated: false };
+    }
+
+    if (!allowClear && (cmd.mediaId === null || cmd.mediaId === '')) {
+      return { accepted: true, navigated: false };
+    }
+
+    const parsed = sanitizeMediaId(cmd.mediaId);
+    if (!parsed.ok) {
+      rejectCommand('invalid_parameter', cmd, { field: 'mediaId' });
+      return { accepted: false, navigated: false };
+    }
+
+    const refresh = parseRefresh(cmd.refresh);
+    const previousId = mediaIdRef.current;
+    const nextId = parsed.mediaId;
+    const url = lookupPackUrl(config.media, nextId);
+    const navigation = resolvePackNavigation({
+      currentId: previousId,
+      nextId,
+      refresh,
+      url,
+    });
+
+    mediaIdRef.current = nextId;
+    persistMediaId(nextId);
+
+    const refreshed = refresh && navigation !== 'none' ? ['bundle'] : [];
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'switchMedia' });
+      mqttRef.current.publishEvent('mediaSwitched', {
+        mediaId: nextId,
+        refresh,
+        refreshed,
+      });
+
+      if (!url && nextId != null) {
+        mqttRef.current.publishWarning(
+          'No pack URL configured for this mediaId. Rooms must build one site per pack and set [media.N] url in the clock INI. PxC does not prefix a media_dir.',
+          { command: 'switchMedia', mediaId: nextId }
+        );
+      }
+
+      const stateOverrides = {};
+      if (nextId == null) {
+        stateOverrides.mediaId = null;
+      }
+      publishCurrentState(stateOverrides);
+    }
+
+    applyPackNavigation(navigation, url);
+    return { accepted: true, navigated: navigation !== 'none' };
   };
 
   // Initialize timer
@@ -287,7 +368,17 @@ const ClockShell = ({ config }) => {
           }
 
           switch (cmd.command) {
+            case 'switchMedia': {
+              applySwitchMedia(cmd);
+              break;
+            }
             case 'start':
+              if (Object.prototype.hasOwnProperty.call(cmd, 'mediaId')) {
+                const switched = applySwitchMedia(cmd, { allowClear: false });
+                if (!switched.accepted || switched.navigated) {
+                  break;
+                }
+              }
               if (cmd.time) {
                 handleStart(cmd.time);
               } else if (typeof cmd.seconds === 'number') {

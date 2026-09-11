@@ -53,11 +53,21 @@ function App() {
             mqtt: runtimeConfig.mqtt ? { ...builtinConfig.mqtt, ...runtimeConfig.mqtt } : builtinConfig.mqtt,
             display: runtimeConfig.display ? { ...builtinConfig.display, ...runtimeConfig.display } : builtinConfig.display,
             type: builtinConfig.type, // Always use built-in (not in runtime config)
+            media: runtimeConfig.media
+              ? {
+                ...(builtinConfig.media || {}),
+                ...runtimeConfig.media,
+                packs: {
+                  ...((builtinConfig.media && builtinConfig.media.packs) || {}),
+                  ...(runtimeConfig.media.packs || {}),
+                },
+              }
+              : builtinConfig.media,
           };
           
           // Merge style-specific section (led, analog, flip, etc.)
           const styleKey = Object.keys(runtimeConfig).find(key => 
-            !['mqtt', 'display', 'type'].includes(key)
+            !['mqtt', 'display', 'type', 'media'].includes(key)
           );
           if (styleKey && runtimeConfig[styleKey]) {
             mergedConfig[styleKey] = { ...builtinConfig[styleKey] || {}, ...runtimeConfig[styleKey] };

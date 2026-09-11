@@ -70,6 +70,7 @@ Fields:
   - stopwatch: `MM:SS` or `HH:MM:SS` (elapsed time)
 - `visible`: `true` after fadeIn completes, `false` when faded out
 - `kiosk`: `true` if running in kiosk/fullscreen mode
+- `mediaId`: Catalog pack id (integer) **only when a pack has been set**. Omit the field entirely when unset.
 
 ### Events (Output) - `{base}/events`
 The clock publishes acknowledgment events when commands are received:
@@ -84,6 +85,7 @@ The clock publishes acknowledgment events when commands are received:
 Event types:
 - `command_received`: Command was accepted and processed
 - `command_rejected`: Command was invalid or rejected (includes `reason` field)
+- `mediaSwitched`: Media pack id was applied (`mediaId`, `refresh`, `refreshed`)
 
 ### Warnings (Output) - `{base}/warnings`
 The clock publishes warning messages for errors or invalid commands:
@@ -133,11 +135,16 @@ or
 ```json
 {"command": "resume"}
 ```
+or (optional pack, suite contract)
+```json
+{"command": "start", "mediaId": 2, "refresh": false}
+```
 
 **Behavior**:
 - **Countdown mode**: Starts counting down from current time
 - **Stopwatch mode**: Starts counting up from current time
 - **Clock mode**: No effect (clock always shows current time)
+- Optional `mediaId` / `refresh` on `start` run `switchMedia` first (see Media pack). When omitted, start does not change the retained pack.
 
 ### Pause
 Stops the timer without changing the display.
@@ -390,6 +397,65 @@ Restores runtime display colors to built-in defaults.
 - Resets text alpha to `1.0` (opaque)
 - Publishes `display_colors_updated` with `reset: true`
 
+## 7. Media pack (`switchMedia`)
+
+Suite contract: PxH `docs/standards/MQTT-CONTRACT.md` § Media pack. PxC does **not**
+prefix a PFx-style `media_dir`. A pack is a **prebuilt React bundle** (or URL). Rooms
+must **build one site per pack** and point the clock at that URL. Optional later catalog
+`pxcUrl` is not required here.
+
+Loading a new bundle **may flash**. This build does not preload the next pack.
+
+### Switch media pack
+
+```json
+{"command": "switchMedia", "mediaId": 2, "refresh": false}
+```
+
+| Field | Required | Default | Meaning |
+|-------|----------|---------|---------|
+| `mediaId` | yes | — | Catalog Version ID. JSON number or decimal string matching `^[1-9][0-9]{0,8}$`. Reject `0`, leading zeros, `/`, `..`, empty slugs like `v1`. On reject: ignore the command, publish `warnings`, keep the previous pack. Send `mediaId: null` (on `switchMedia` only) to clear. |
+| `refresh` | no | `false` | If `true`, navigate/reload the pack URL even if already on that id. If `false` and already on that pack, do not navigate. |
+
+Unknown extra fields are ignored. Do not invent additional MQTT fields on this command.
+
+**Optional INI map** (config, not an MQTT field):
+
+```ini
+[media]
+url = /clock/
+
+[media.1]
+url = /clock/en/
+
+[media.2]
+url = /clock/es/
+```
+
+`[media] url` is the cleared / default bundle. `[media.<id>] url` is the prebuilt site
+for that pack. Operators can also put the same `media` object in runtime `config.json`.
+
+**Behavior**:
+- Accepts the command, stores `mediaId`, publishes retained `{base}/state` (omit `mediaId` entirely when unset) and a non-retained `{base}/events` `mediaSwitched` receipt.
+- If a URL is configured for that id: navigate the kiosk to it (`refresh: true` reloads when already on that pack). The new page may flash.
+- If no URL is configured: still accept, set state `mediaId`, and publish a warning that rooms must build one site per pack / configure `[media.N] url`. Do not crash. Do not invent a `media_dir` prefix.
+- `start` may include the same optional `mediaId` / `refresh`. When present (and not `null`), it is equivalent to `switchMedia` immediately before the rest of start. If that switch navigates to another bundle, the remainder of start is not replayed on the new page — send `start` again after the new clock reconnects.
+
+`mediaSwitched` example:
+
+```json
+{
+  "event": "mediaSwitched",
+  "mediaId": 2,
+  "refresh": false,
+  "refreshed": []
+}
+```
+
+`refreshed` is `["bundle"]` only when `refresh` is true and a navigation/reload actually happens; otherwise `[]`.
+
+Unknown commands already return `command_rejected` with `reason: "unknown_command"` and do **not** tear down the process.
+
 ## Mode-Specific Behaviors
 
 ### Countdown Mode
@@ -498,6 +564,10 @@ mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
 # Reset display colors to config defaults
 mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
   -m '{"command":"resetDisplayColors"}'
+
+# Switch to media pack 2 (loads [media.2] url if configured; may flash)
+mosquitto_pub -h localhost -p 1883 -t "paradox/clock/test/commands" \
+  -m '{"command":"switchMedia","mediaId":2,"refresh":false}'
 ```
 
 Manual sequence script:

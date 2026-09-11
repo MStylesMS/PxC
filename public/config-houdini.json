@@ -42,5 +42,9 @@
     "hint.font.color": "#ffffff",
     "hint.font.alpha": "1.0",
     "hint.font.path": "assets/houdini/alger.ttf"
+  },
+  "media": {
+    "packs": {},
+    "defaultUrl": null
   }
 }
