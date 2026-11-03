@@ -44,3 +44,6 @@ lerna-debug.log*
 package-lock.json
 package-lock.json
 package-lock.json
+
+# Room media (videos, images, audio) never goes in the PxC repo (Mark, 2026-11-03)
+media/
