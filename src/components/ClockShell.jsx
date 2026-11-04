@@ -9,11 +9,19 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import FadeWrapper from './FadeWrapper';
 import AnalogClock from './clocks/AnalogClock';
 import LedClock from './clocks/LedClock';
+import LayoutStage from './LayoutStage';
 import { CountdownTimer } from '../utils/time-service';
 import { MQTTClient } from '../utils/mqtt-client';
+import {
+  assertKnownLayout,
+  buildFieldState,
+  normalizeVolume,
+  safeAssetName,
+  SET_LAYOUT_RESERVED,
+  SET_MESSAGE_RESERVED,
+} from '../utils/layout-runtime';
 import {
   applyPackNavigation,
   lookupPackUrl,
@@ -30,7 +38,7 @@ const NAMED_COLORS = new Set([
   'orange', 'purple', 'pink', 'gray', 'silver', 'navy', 'teal', 'lime',
 ]);
 
-const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const DEFAULT_DISPLAY_COLORS = {
   backgroundColor: 'white',
   textColor: 'black',
@@ -102,6 +110,17 @@ const ClockShell = ({ config }) => {
   const [hintText, setHintText] = useState('');
   const [hintDuration, setHintDuration] = useState(15);
   const [displayColors, setDisplayColors] = useState(() => ({ ...DEFAULT_DISPLAY_COLORS }));
+  const layoutsConfig = config && config.layouts && config.layouts.layouts ? config.layouts : null;
+  const [activeLayout, setActiveLayout] = useState(() => (layoutsConfig ? layoutsConfig.default : null));
+  const [fieldOverrides, setFieldOverrides] = useState({});
+  const [imageOverride, setImageOverride] = useState(null);
+  const [layoutVolume, setLayoutVolume] = useState(null);
+  const [fieldOpacity, setFieldOpacity] = useState({});
+  const [fieldFadeMs, setFieldFadeMs] = useState({});
+  const [veilColor, setVeilColor] = useState(() => {
+    if (!config || !config.display) return '#000000';
+    return config.display.fade_color || config.display.fade_background_color || '#000000';
+  });
 
   const timerRef = useRef(null);
   const mqttRef = useRef(null);
@@ -113,6 +132,13 @@ const ClockShell = ({ config }) => {
   const activeRef = useRef(active);
   const visibleRef = useRef(visible);
   const mediaIdRef = useRef(readStoredMediaId());
+  const activeLayoutRef = useRef(activeLayout);
+  const fieldOverridesRef = useRef(fieldOverrides);
+  const imageOverrideRef = useRef(imageOverride);
+  const layoutVolumeRef = useRef(layoutVolume);
+  const fieldOpacityRef = useRef(fieldOpacity);
+  const layoutsConfigRef = useRef(layoutsConfig);
+  const hintClearTimerRef = useRef(null);
 
   const clearHintTimer = () => {
     if (hintTimeoutRef.current) {
@@ -146,6 +172,41 @@ const ClockShell = ({ config }) => {
     clearHintTimer();
     hintRemainingMsRef.current = 0;
     setHintText('');
+    hintTextRef.current = '';
+  };
+
+  const cancelScheduledHintClear = () => {
+    if (hintClearTimerRef.current) {
+      clearTimeout(hintClearTimerRef.current);
+      hintClearTimerRef.current = null;
+    }
+  };
+
+  const scheduleHintClear = (delayMs) => {
+    cancelScheduledHintClear();
+    if (!delayMs || delayMs <= 0) {
+      clearHint();
+      return;
+    }
+    hintClearTimerRef.current = setTimeout(() => {
+      hintClearTimerRef.current = null;
+      clearHint();
+    }, delayMs);
+  };
+
+  const requireLayouts = (cmd) => {
+    if (!layoutsConfigRef.current) {
+      rejectCommand('layouts_not_configured', cmd);
+      return false;
+    }
+    return true;
+  };
+
+  const isAcceptableColor = (value) => {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (NAMED_COLORS.has(trimmed.toLowerCase())) return true;
+    return HEX_COLOR_RE.test(trimmed);
   };
 
   // Cleanup hint timer on unmount.
@@ -169,6 +230,15 @@ const ClockShell = ({ config }) => {
   useEffect(() => {
     visibleRef.current = visible;
   }, [visible]);
+
+  useEffect(() => {
+    activeLayoutRef.current = activeLayout;
+    fieldOverridesRef.current = fieldOverrides;
+    imageOverrideRef.current = imageOverride;
+    layoutVolumeRef.current = layoutVolume;
+    fieldOpacityRef.current = fieldOpacity;
+    layoutsConfigRef.current = layoutsConfig;
+  }, [activeLayout, fieldOverrides, imageOverride, layoutVolume, fieldOpacity, layoutsConfig]);
 
   useEffect(() => {
     setFadeDurationMs(getDefaultFadeDurationMs());
@@ -200,6 +270,22 @@ const ClockShell = ({ config }) => {
       payload.mediaId = mediaIdRef.current;
     } else if (Object.prototype.hasOwnProperty.call(overrides, 'mediaId') && overrides.mediaId == null) {
       delete payload.mediaId;
+    }
+
+    const layoutsNow = layoutsConfigRef.current;
+    const layoutName = activeLayoutRef.current;
+    if (layoutsNow && layoutName && layoutsNow.layouts[layoutName]) {
+      const layout = layoutsNow.layouts[layoutName];
+      payload.layout = layoutName;
+      payload.fields = buildFieldState(layout, {
+        timeText: formattedTime,
+        hintText: hintTextRef.current,
+        overrides: fieldOverridesRef.current,
+        opacity: fieldOpacityRef.current,
+      });
+      if (layout.backgroundVideo) {
+        payload.volume = layoutVolumeRef.current != null ? layoutVolumeRef.current : layout.volume;
+      }
     }
 
     return payload;
@@ -431,34 +517,22 @@ const ClockShell = ({ config }) => {
               handleClear();
               break;
             case 'show':
-              setFadeDurationMs(0);
-              setVisible(true);
-              if (mqttRef.current) {
-                mqttRef.current.publishEvent('command_received', { command: 'show' });
-              }
-              break;
-            case 'fadeIn':
-              setFadeDurationMs(resolveCommandFadeDurationMs(cmd));
-              setVisible(true);
-              if (mqttRef.current) {
-                mqttRef.current.publishEvent('command_received', { command: 'fadeIn' });
-              }
-              break;
             case 'hide':
-              setFadeDurationMs(0);
-              clearHint();
-              setVisible(false);
-              if (mqttRef.current) {
-                mqttRef.current.publishEvent('command_received', { command: 'hide' });
-              }
-              break;
+            case 'fadeIn':
             case 'fadeOut':
-              setFadeDurationMs(resolveCommandFadeDurationMs(cmd));
-              clearHint();
-              setVisible(false);
-              if (mqttRef.current) {
-                mqttRef.current.publishEvent('command_received', { command: 'fadeOut' });
-              }
+              handleVisibility(cmd);
+              break;
+            case 'setLayout':
+              handleSetLayout(cmd);
+              break;
+            case 'setMessage':
+              handleSetMessage(cmd);
+              break;
+            case 'setImage':
+              handleSetImage(cmd);
+              break;
+            case 'setVolume':
+              handleSetVolume(cmd);
               break;
             case 'getState':
               if (mqttRef.current) {
@@ -480,7 +554,7 @@ const ClockShell = ({ config }) => {
               break;
             case 'hint':
               if (cmd.text) {
-                handleHint(cmd.text, cmd.duration);
+                handleHint(cmd.text, cmd.duration, cmd.fadeTime);
               } else {
                 rejectCommand('invalid_parameter', cmd, { required: 'text' });
               }
@@ -659,7 +733,14 @@ const ClockShell = ({ config }) => {
     }
   };
 
-  const handleHint = (text, duration = 15) => {
+  const handleHint = (text, duration = 15, fadeTime) => {
+    const layout = layoutsConfigRef.current
+      && layoutsConfigRef.current.layouts[activeLayoutRef.current];
+    if (layout && !layout.fields.hint) {
+      rejectCommand('unknown_field', { command: 'hint' }, { field: 'hint' });
+      return;
+    }
+
     const normalizedText = typeof text === 'string' ? text.trim() : '';
     const parsedDuration = Number(duration);
     const normalizedDuration = Number.isFinite(parsedDuration) && parsedDuration > 0
@@ -671,7 +752,17 @@ const ClockShell = ({ config }) => {
       return;
     }
 
+    const fadeMs = fadeTime == null || fadeTime === ''
+      ? 0
+      : resolveCommandFadeDurationMs({ fadeTime });
+    if (layout) {
+      fieldOpacityRef.current = { ...fieldOpacityRef.current, hint: 1 };
+      setFieldOpacity(fieldOpacityRef.current);
+      setFieldFadeMs((prev) => ({ ...prev, hint: fadeMs }));
+    }
+
     setHintDuration(normalizedDuration);
+    hintTextRef.current = normalizedText;
     setHintText(normalizedText);
     startHintTimer(normalizedDuration * 1000);
 
@@ -679,6 +770,186 @@ const ClockShell = ({ config }) => {
       mqttRef.current.publishEvent('hint_displayed', { text: normalizedText, duration: normalizedDuration });
     }
     console.warn('[ClockShell] handleHint: text=', JSON.stringify(normalizedText), 'duration=', normalizedDuration);
+  };
+
+  const handleVisibility = (cmd) => {
+    const hiding = cmd.command === 'hide' || cmd.command === 'fadeOut';
+    const instant = cmd.command === 'show' || cmd.command === 'hide';
+    const durationMs = instant ? 0 : resolveCommandFadeDurationMs(cmd);
+
+    if (Object.prototype.hasOwnProperty.call(cmd, 'color')) {
+      if (!isAcceptableColor(cmd.color)) {
+        rejectCommand('invalid_parameter', cmd, { field: 'color' });
+        return;
+      }
+      setVeilColor(cmd.color);
+    }
+
+    if (cmd.field) {
+      const layout = layoutsConfigRef.current
+        && layoutsConfigRef.current.layouts[activeLayoutRef.current];
+      if (!layout || !layout.fields[cmd.field]) {
+        rejectCommand('unknown_field', cmd, { field: cmd.field });
+        return;
+      }
+      fieldOpacityRef.current = { ...fieldOpacityRef.current, [cmd.field]: hiding ? 0 : 1 };
+      setFieldOpacity(fieldOpacityRef.current);
+      setFieldFadeMs((prev) => ({ ...prev, [cmd.field]: durationMs }));
+      if (mqttRef.current) {
+        mqttRef.current.publishEvent('command_received', { command: cmd.command, field: cmd.field });
+      }
+      return;
+    }
+
+    setFadeDurationMs(durationMs);
+    setVisible(!hiding);
+    visibleRef.current = !hiding;
+    if (hiding) scheduleHintClear(durationMs);
+    else cancelScheduledHintClear();
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: cmd.command });
+    }
+  };
+
+  const handleSetLayout = (cmd) => {
+    if (!requireLayouts(cmd)) return;
+    const layoutsNow = layoutsConfigRef.current;
+    let layout;
+    try {
+      layout = assertKnownLayout(layoutsNow, cmd.layout);
+    } catch (error) {
+      rejectCommand(error.reason || 'unknown_layout', cmd, {
+        layout: cmd.layout,
+        available: error.available,
+      });
+      return;
+    }
+
+    const overrides = {};
+    const unknown = [];
+    Object.keys(cmd).forEach((key) => {
+      if (SET_LAYOUT_RESERVED.has(key)) return;
+      if (!layout.fields[key] || key === 'time' || key === 'hint') {
+        unknown.push(key);
+        return;
+      }
+      overrides[key] = cmd[key] == null ? layout.fields[key].text : String(cmd[key]);
+    });
+    if (unknown.length) {
+      rejectCommand('unknown_field', cmd, { field: unknown[0] });
+      return;
+    }
+
+    let nextVolume = layout.volume;
+    if (Object.prototype.hasOwnProperty.call(cmd, 'volume')) {
+      const parsed = normalizeVolume(cmd.volume);
+      if (parsed === null) {
+        rejectCommand('invalid_parameter', cmd, { field: 'volume' });
+        return;
+      }
+      if (!layout.backgroundVideo) {
+        rejectCommand('no_video', cmd);
+        return;
+      }
+      nextVolume = parsed;
+    }
+
+    const previous = activeLayoutRef.current;
+    activeLayoutRef.current = layout.name;
+    fieldOverridesRef.current = overrides;
+    imageOverrideRef.current = null;
+    layoutVolumeRef.current = nextVolume;
+    fieldOpacityRef.current = {};
+    hintTextRef.current = '';
+    setActiveLayout(layout.name);
+    setFieldOverrides(overrides);
+    setImageOverride(null);
+    setLayoutVolume(nextVolume);
+    setFieldOpacity({});
+    setFieldFadeMs({});
+    clearHint();
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'setLayout', layout: layout.name });
+      mqttRef.current.publishEvent('layout_changed', { layout: layout.name, previous });
+      publishCurrentState();
+    }
+  };
+
+  const handleSetMessage = (cmd) => {
+    if (!requireLayouts(cmd)) return;
+    const layout = layoutsConfigRef.current.layouts[activeLayoutRef.current];
+    const keys = Object.keys(cmd).filter((key) => !SET_MESSAGE_RESERVED.has(key));
+    if (!keys.length) {
+      rejectCommand('invalid_parameter', cmd, { required: 'field' });
+      return;
+    }
+    const unknown = keys.find((key) => !layout.fields[key] || key === 'time' || key === 'hint');
+    if (unknown) {
+      rejectCommand('unknown_field', cmd, { field: unknown });
+      return;
+    }
+
+    const next = { ...fieldOverridesRef.current };
+    keys.forEach((key) => {
+      if (cmd[key] == null) delete next[key];
+      else next[key] = String(cmd[key]);
+    });
+    fieldOverridesRef.current = next;
+    setFieldOverrides(next);
+
+    const fadeMs = Object.prototype.hasOwnProperty.call(cmd, 'fadeTime')
+      ? resolveCommandFadeDurationMs({ fadeTime: cmd.fadeTime })
+      : 0;
+    if (fadeMs) {
+      const fade = { ...fieldFadeMs };
+      keys.forEach((key) => { fade[key] = fadeMs; });
+      setFieldFadeMs(fade);
+    }
+
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'setMessage' });
+      mqttRef.current.publishEvent('message_changed', { fields: keys });
+      publishCurrentState();
+    }
+  };
+
+  const handleSetImage = (cmd) => {
+    if (!requireLayouts(cmd)) return;
+    const file = safeAssetName(cmd.file);
+    const assets = layoutsConfigRef.current.assets || [];
+    if (!file || !assets.includes(file)) {
+      rejectCommand('unknown_file', cmd, { file: cmd.file });
+      return;
+    }
+    imageOverrideRef.current = file;
+    setImageOverride(file);
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'setImage', file });
+      mqttRef.current.publishEvent('image_changed', { file });
+      publishCurrentState();
+    }
+  };
+
+  const handleSetVolume = (cmd) => {
+    if (!requireLayouts(cmd)) return;
+    const layout = layoutsConfigRef.current.layouts[activeLayoutRef.current];
+    if (!layout || !layout.backgroundVideo) {
+      rejectCommand('no_video', cmd);
+      return;
+    }
+    const parsed = normalizeVolume(cmd.volume);
+    if (parsed === null) {
+      rejectCommand('invalid_parameter', cmd, { field: 'volume' });
+      return;
+    }
+    layoutVolumeRef.current = parsed;
+    setLayoutVolume(parsed);
+    if (mqttRef.current) {
+      mqttRef.current.publishEvent('command_received', { command: 'setVolume', volume: parsed });
+      mqttRef.current.publishEvent('volume_changed', { volume: parsed });
+      publishCurrentState();
+    }
   };
 
   const handleSetDisplayColors = (cmd = {}) => {
@@ -805,31 +1076,27 @@ const ClockShell = ({ config }) => {
     },
   } : null;
 
-  // LED clocks handle their own background, so don't wrap them
-  const useFadeWrapper = !config.type.style.includes('digit') && !config.type.style.includes('led') && config.display;
+  const veilBackground = config.display
+    && config.display.fade_background_type === 'image'
+    && config.display.fade_background_image
+    && !layoutsConfig
+    ? `url(${config.display.fade_background_image}) center / cover no-repeat`
+    : veilColor;
 
   return (
     <div className="clock-shell">
-      {useFadeWrapper ? (
-        <FadeWrapper
-          visible={visible}
-          duration={fadeDurationMs}
-          backgroundType={config.display.fade_background_type}
-          backgroundColor={config.display.fade_background_color}
-          backgroundImage={config.display.fade_background_image}
-        >
-          <Renderer
-            config={config}
-            time={time}
-            active={active}
-            hint={hintText}
-            hintText={hintText}
-            hintDuration={hintDuration}
-            hintFont={hintConfig?.font}
-            displayColors={displayColors}
-            visible={visible}
-          />
-        </FadeWrapper>
+      {layoutsConfig ? (
+        <LayoutStage
+          layoutsConfig={layoutsConfig}
+          active={activeLayout}
+          seconds={time}
+          hintText={hintText}
+          overrides={fieldOverrides}
+          imageOverride={imageOverride}
+          volume={layoutVolume}
+          fieldOpacity={fieldOpacity}
+          fieldFadeMs={fieldFadeMs}
+        />
       ) : (
         <Renderer
           config={config}
@@ -840,9 +1107,18 @@ const ClockShell = ({ config }) => {
           hintDuration={hintDuration}
           hintFont={hintConfig?.font}
           displayColors={displayColors}
-          visible={visible}
+          visible
         />
       )}
+      <div
+        className="pxc-veil"
+        data-testid="pxc-veil"
+        style={{
+          opacity: visible ? 0 : 1,
+          transition: `opacity ${fadeDurationMs}ms ease-in-out`,
+          background: veilBackground,
+        }}
+      />
     </div>
   );
 };
