@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const ini = require('ini');
 const { extractMediaPackUrls } = require('../src/utils/media-pack');
+const { parseLayouts, quoteIniHex } = require('../src/utils/layouts');
 
 // Configuration
 const DEFAULT_CONFIG = 'config/houdini.ini';
@@ -36,16 +37,14 @@ if (!fs.existsSync(configPath)) {
 
 // Read and parse INI file
 let rawConfig;
+let processedIniContent = '';
 try {
   const iniContent = fs.readFileSync(configPath, 'utf-8');
 
   // The `ini` package v4 treats `#` as a comment character, which would silently
   // discard bare hex colour values like `color = #ffffff`.  Pre-process the raw
   // text to wrap any unquoted hex value in double-quotes so the parser keeps it.
-  const processedIniContent = iniContent.replace(
-    /^(\s*[^;#\n][^=\n]*=\s*)(#[0-9a-fA-F]{3,8})\s*$/gm,
-    (_, prefix, hex) => `${prefix}"${hex}"`
-  );
+  processedIniContent = quoteIniHex(iniContent);
 
   rawConfig = ini.parse(processedIniContent);
 } catch (error) {
@@ -155,6 +154,22 @@ if (rawConfig.display) {
 
 console.log(`[prebuild] Validation passed`);
 
+let layoutsConfig = null;
+try {
+  layoutsConfig = parseLayouts(rawConfig, {
+    iniText: processedIniContent,
+    rootDir: ROOT_DIR,
+    checkFiles: true,
+  });
+} catch (error) {
+  console.error(`[prebuild] ERROR: ${error.message}`);
+  process.exit(1);
+}
+
+if (layoutsConfig) {
+  console.log(`[prebuild] Layouts: ${Object.keys(layoutsConfig.layouts).join(', ')}`);
+}
+
 // Apply defaults and type coercion
 const config = {
   mqtt: rawConfig.mqtt ? {
@@ -172,7 +187,9 @@ const config = {
     fade_background_type: rawConfig.display.fade_background_type || 'color',
     fade_background_color: rawConfig.display.fade_background_color || '#000000',
     fade_background_image: rawConfig.display.fade_background_image || null,
+    fade_color: rawConfig.display.fade_color || rawConfig.display.fade_background_color || '#000000',
   },
+  ...(layoutsConfig ? { layouts: layoutsConfig, fonts: layoutsConfig.fonts } : {}),
   
   type: {
     style: rawConfig.type.style,
@@ -234,6 +251,7 @@ const runtimeConfig = {
   display: config.display,
   [styleSection]: config[styleSection],
   media: config.media,
+  ...(config.layouts ? { layouts: config.layouts, fonts: config.fonts } : {}),
 };
 
 const runtimeConfigJson = JSON.stringify(runtimeConfig, null, 2);
@@ -260,4 +278,25 @@ console.log(`[prebuild] ✓ Style: ${config.type.style}`);
 console.log(`[prebuild] ✓ Mode: ${config.type.mode}`);
 console.log(`[prebuild] ✓ MQTT: ${config.mqtt ? 'enabled' : 'disabled'}`);
 console.log(`[prebuild] ✓ Runtime config: public/config-${profileName}.json (tracked) + public/config.json (build artifact)`);
+if (layoutsConfig && layoutsConfig.assetsDir && fs.existsSync(layoutsConfig.assetsDir)) {
+  const roomAssetsDir = path.resolve(publicDir, 'assets/room');
+  fs.mkdirSync(roomAssetsDir, { recursive: true });
+  const copied = new Set(layoutsConfig.assets);
+  Object.values(layoutsConfig.layouts).forEach((layout) => {
+    if (layout.backgroundVideo) copied.add(layout.backgroundVideo);
+    if (layout.backgroundVideoFallback) copied.add(layout.backgroundVideoFallback);
+  });
+  Object.values(layoutsConfig.fonts || {}).forEach((font) => {
+    if (font.file) copied.add(font.file);
+  });
+  copied.forEach((file) => {
+    const from = path.resolve(layoutsConfig.assetsDir, file);
+    if (!fs.existsSync(from)) return;
+    const dest = path.resolve(roomAssetsDir, file);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(from, dest);
+  });
+  console.log(`[prebuild] ✓ Copied ${copied.size} room asset(s) -> public/assets/room/`);
+}
+
 console.log(`[prebuild] ✓ Ready to build`);

@@ -39,6 +39,9 @@ export class MQTTClient {
     this.maxReconnectAttempts = this.config.max_reconnect_attempts ?? Infinity;
     this.reconnectDelay = this.config.reconnect_interval || 5000;
     this._heartbeatInterval = null;
+    this.layoutNames = config.layouts && config.layouts.layouts
+      ? Object.keys(config.layouts.layouts)
+      : null;
   }
 
   /**
@@ -276,8 +279,15 @@ export class MQTTClient {
         { command: 'fadeOut',          description: 'Fade clock out (optional: duration seconds)' },
         { command: 'hint',             description: 'Show hint overlay (text: string, duration: seconds)' },
         { command: 'clearHint',        description: 'Clear hint overlay' },
-        { command: 'setDisplayColors', description: 'Override display colors (backgroundColor, textColor)' }
-      ]
+        { command: 'setDisplayColors', description: 'Override display colors (backgroundColor, textColor)' },
+        ...(this.layoutNames ? [
+          { command: 'setLayout', description: 'Show a named layout' },
+          { command: 'setMessage', description: 'Set named text fields on the current layout' },
+          { command: 'setImage', description: 'Replace the current layout background image' },
+          { command: 'setVolume', description: 'Set layout video volume, 0-200' },
+        ] : []),
+      ],
+      ...(this.layoutNames ? { layouts: this.layoutNames } : {}),
     });
   }
 

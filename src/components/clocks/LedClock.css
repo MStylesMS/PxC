@@ -7,15 +7,11 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: opacity 0.6s ease;
 }
 
-.led-clock-container.visible {
-  opacity: 1;
-}
-
+.led-clock-container.visible,
 .led-clock-container.hidden {
-  opacity: 0;
+  opacity: 1;
 }
 
 .led-clock-time {

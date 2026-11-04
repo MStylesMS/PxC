@@ -106,6 +106,7 @@ function validateConfig(rawConfig) {
       fade_background_type: rawConfig.display.fade_background_type || 'color',
       fade_background_color: rawConfig.display.fade_background_color || '#000000',
       fade_background_image: rawConfig.display.fade_background_image || null,
+      fade_color: rawConfig.display.fade_color || rawConfig.display.fade_background_color || '#000000',
     },
 
     type: {

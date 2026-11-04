@@ -4,6 +4,13 @@
   position: relative;
 }
 
+.pxc-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
 .clock-shell-error {
   display: flex;
   align-items: center;

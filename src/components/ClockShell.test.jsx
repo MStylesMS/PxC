@@ -254,36 +254,37 @@ describe('ClockShell hint lifecycle', () => {
   test('makes show and hide instant while preserving fadeIn duration for wrapped clocks', () => {
     render(<ClockShell config={analogConfig} />);
 
-    const fadeContent = document.querySelector('.fade-content');
-    expect(fadeContent.style.transition).toBe('opacity 300ms ease-in-out');
+    const veil = document.querySelector('.pxc-veil');
+    expect(veil.style.transition).toBe('opacity 300ms ease-in-out');
 
     act(() => {
       mockClient.emitCommand({ command: 'show' });
     });
 
-    expect(fadeContent.style.opacity).toBe('1');
-    expect(fadeContent.style.transition).toBe('opacity 0ms ease-in-out');
+    // The veil covers the page. Visible means the veil is transparent.
+    expect(veil.style.opacity).toBe('0');
+    expect(veil.style.transition).toBe('opacity 0ms ease-in-out');
 
     act(() => {
       mockClient.emitCommand({ command: 'hide' });
     });
 
-    expect(fadeContent.style.opacity).toBe('0');
-    expect(fadeContent.style.transition).toBe('opacity 0ms ease-in-out');
+    expect(veil.style.opacity).toBe('1');
+    expect(veil.style.transition).toBe('opacity 0ms ease-in-out');
 
     act(() => {
       mockClient.emitCommand({ command: 'fadeIn', duration: 1.5 });
     });
 
-    expect(fadeContent.style.opacity).toBe('1');
-    expect(fadeContent.style.transition).toBe('opacity 1500ms ease-in-out');
+    expect(veil.style.opacity).toBe('0');
+    expect(veil.style.transition).toBe('opacity 1500ms ease-in-out');
 
     act(() => {
       mockClient.emitCommand({ command: 'fadeOut', fadeTime: 0.5 });
     });
 
-    expect(fadeContent.style.opacity).toBe('0');
-    expect(fadeContent.style.transition).toBe('opacity 500ms ease-in-out');
+    expect(veil.style.opacity).toBe('1');
+    expect(veil.style.transition).toBe('opacity 500ms ease-in-out');
   });
 
   test('publishes current state on getState', () => {

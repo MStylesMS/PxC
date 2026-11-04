@@ -397,7 +397,55 @@ Restores runtime display colors to built-in defaults.
 - Resets text alpha to `1.0` (opaque)
 - Publishes `display_colors_updated` with `reset: true`
 
-## 7. Media pack (`switchMedia`)
+## 7. Layouts
+
+Present only when the clock INI has `[layout.*]` sections. On a clock without layouts these commands are rejected with `layouts_not_configured`, and state payloads stay as they are today.
+
+`show`, `hide`, `fadeIn`, and `fadeOut` move a full-screen veil. `show` and `hide` use duration 0. `fadeIn` and `fadeOut` use `duration` or `fadeTime` in seconds. Optional `color` sets the veil (`#RGB`, `#RRGGBB`, `#RRGGBBAA`, or a named color). Optional `field` fades that text field and leaves the veil alone. A page `hide` or `fadeOut` clears the hint when the transition finishes. Time and other text fields stay.
+
+### setLayout
+
+```json
+{"command":"setLayout","layout":"normal_clock"}
+{"command":"setLayout","layout":"win_screen","win_message":"You did it!","volume":80}
+```
+
+Shows that layout and loads its defaults. Extra keys that name a text field on the layout override that field. `volume` is 0–200 (100 = unity) when the layout has a video. Does not start, stop, or re-sync the timer. Event `layout_changed` includes `previous`.
+
+### setMessage
+
+```json
+{"command":"setMessage","win_message":"You did it!","fadeTime":0.3}
+{"command":"setMessage","win_message":null}
+```
+
+Sets named fields on the current layout. `""` blanks a field. `null` restores the layout default. `time` and `hint` are not set here. Event `message_changed`.
+
+### setImage
+
+```json
+{"command":"setImage","file":"lose.png"}
+```
+
+Replaces the background still of the layout that is showing and pauses its video. `file` is relative to `[layouts] assets_dir` and must be one of the images from that directory. The next `setLayout`, including the same layout, restores the layout's own image and video. Event `image_changed`.
+
+### setVolume
+
+```json
+{"command":"setVolume","volume":80}
+```
+
+Sets the playing layout video's volume on the PFx scale, 0–200, without restarting it. 100 is unity. Above 100 is a gain up to 2.0 at 200. No video on the current layout rejects with `no_video`.
+
+### Hint
+
+`hint` still uses `duration` as how long the text stays up. `fadeTime` is the opacity fade, in seconds. A layout with no `hint` field rejects the command.
+
+### State
+
+When layouts are configured, state adds `layout`, `fields` (text on the shown layout only), and `volume` when that layout has a video. A field whose opacity is not 1 is `{ "text", "opacity" }`.
+
+## 8. Media pack (`switchMedia`)
 
 Suite contract: PxH `docs/standards/MQTT-CONTRACT.md` § Media pack. PxC does **not**
 prefix a PFx-style `media_dir`. A pack is a **prebuilt React bundle** (or URL). Rooms

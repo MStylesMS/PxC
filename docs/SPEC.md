@@ -213,3 +213,7 @@ Example usage
 
 An example `config/examples/simple-4digit-landscape.ini` will demonstrate the `[display]`, `[type]`, `[led4]` and `[mqtt]` sections with concrete file paths and values.
 
+## Layouts
+
+A clock INI may define named full-screen layouts (`[layout.<name>]` and `[layout.<name>.<field>]`). When those sections are present, PxC shows one layout at a time inside the same page. `setLayout` chooses it. `setMessage` sets named text fields. `setImage` replaces the current background still. `setVolume` sets a layout video's volume on the 0–200 scale used by PFx. Clocks without `[layout.*]` keep the LedClock or AnalogClock renderer and today's state payload. The page veil (`show`, `hide`, `fadeIn`, `fadeOut`) is shared by every style. See `docs/MQTT_API.md`.
+

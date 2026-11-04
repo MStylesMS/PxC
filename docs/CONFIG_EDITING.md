@@ -35,6 +35,8 @@ Example changes:
 
 Reload the page in the browser - changes take effect immediately (no rebuild needed).
 
+Layouts, when the build has them, are included in `config.json` (`layouts`, `fonts`). Positions, colors, and default text can be edited there and picked up on reload. A new image or video still has to be present under `assets/room/` in the build. The page loads `config.json` relative to itself.
+
 ### Method 2: Edit Before Deploying
 
 Edit `build/config.json` before copying to the web server:

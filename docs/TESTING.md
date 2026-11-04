@@ -19,6 +19,8 @@ These scripts are useful for quick hardware-in-the-loop checks on deployed devic
 - `scripts/manual-hint-pause-sequence.sh`: Validates hint timing across pause/resume behavior.
 - `scripts/manual-color-cycle-sequence.sh`: 23-second runtime display-color validation: 10s opaque color cycling, 8s alpha ramp (0→1), then 5s fade phase (3s text fade-out, 2s fade-in to background black + text navy) using `fadeTime`.
 
+Layout tests live in `src/utils/__tests__/layouts.test.js`, `src/components/ClockShell.layouts.test.jsx`, and `src/utils/__tests__/build-clock.test.js`. Show and hide are a page veil on every style, so the analog fade test reads `.pxc-veil` (opacity 0 when the clock is visible). The LED container no longer forces a 0.6 s opacity transition. Page `hide` still clears a hint immediately because its duration is 0. Page `fadeOut` clears the hint when that duration elapses. `scripts/build-clock.js --prebuild-only` is what T-B1 runs; a full `react-scripts` build is the command without that flag.
+
 ## Test Categories and Priorities
 
 ### Phase 1: Foundation (Implement FIRST)

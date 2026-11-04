@@ -36,7 +36,8 @@ function App() {
 
   useEffect(() => {
     // Try to load runtime config from build/config.json
-    fetch('/clock/config.json')
+    const configUrl = new URL('config.json', window.location.href);
+    fetch(configUrl.href)
       .then(response => {
         if (!response.ok) {
           console.log('[PxC] No runtime config.json found, using built-in config');
@@ -63,11 +64,13 @@ function App() {
                 },
               }
               : builtinConfig.media,
+            layouts: runtimeConfig.layouts || builtinConfig.layouts,
+            fonts: runtimeConfig.fonts || builtinConfig.fonts,
           };
           
           // Merge style-specific section (led, analog, flip, etc.)
           const styleKey = Object.keys(runtimeConfig).find(key => 
-            !['mqtt', 'display', 'type', 'media'].includes(key)
+            !['mqtt', 'display', 'type', 'media', 'layouts', 'fonts'].includes(key)
           );
           if (styleKey && runtimeConfig[styleKey]) {
             mergedConfig[styleKey] = { ...builtinConfig[styleKey] || {}, ...runtimeConfig[styleKey] };
